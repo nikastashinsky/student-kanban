@@ -1,0 +1,26 @@
+{
+    "name": "Student Kanban Board",
+    "short_name": "Kanban",
+    "description": "A playful kanban board for students to organize homework, projects, and tasks",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#f4e4c1",
+    "theme_color": "#f4e4c1",
+    "orientation": "any",
+    "icons": [
+      {
+        "src": "icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ],
+    "categories": ["productivity", "education"],
+    "screenshots": []
+  }
