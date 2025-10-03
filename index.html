@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Kanban Board 📚</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: #f4e4c1;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(139, 69, 19, 0.1) 31px, rgba(139, 69, 19, 0.1) 32px),
+                repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(139, 69, 19, 0.05) 31px, rgba(139, 69, 19, 0.05) 32px);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            color: #6b4423;
+            text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.5);
+            transform: rotate(-1deg);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: 3px solid #333;
+            border-radius: 8px;
+            background: #ffeb3b;
+            font-family: 'Comic Sans MS', cursive;
+            font-size: 14px;
+            cursor: pointer;
+            transform: rotate(-0.5deg);
+            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.2);
+            transition: transform 0.1s;
+        }
+
+        .btn:hover {
+            transform: rotate(-0.5deg) translateY(-2px);
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: rotate(-0.5deg) translateY(1px);
+            box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .column {
+            background: rgba(255, 255, 255, 0.7);
+            border: 4px solid #333;
+            border-radius: 15px;
+            padding: 15px;
+            min-height: 500px;
+            box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+
+        .column::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            pointer-events: none;
+        }
+
+        .column-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 10px;
+            text-align: center;
+            border-bottom: 3px solid #333;
+            color: #333;
+        }
+
+        .add-card-btn {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 3px dashed #666;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            font-family: 'Comic Sans MS', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-card-btn:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: scale(1.02);
+        }
+
+        .cards-container {
+            min-height: 300px;
+        }
+
+        .card {
+            background: #ffd54f;
+            border: 3px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: move;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+            transform: rotate(-0.5deg);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .card:nth-child(even) {
+            transform: rotate(0.5deg);
+        }
+
+        .card:hover {
+            transform: rotate(0deg) translateY(-2px);
+            box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.15);
+        }
+
+        .card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .card-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            flex-grow: 1;
+            cursor: text;
+            padding: 5px;
+            border: 2px solid transparent;
+            border-radius: 5px;
+        }
+
+        .card-title:hover {
+            border-color: #333;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .card-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .card-btn {
+            background: transparent;
+            border: 2px solid #333;
+            border-radius: 5px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .card-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+            transform: scale(1.1);
+        }
+
+        .card-description {
+            margin: 10px 0;
+            padding: 8px;
+            cursor: text;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            min-height: 40px;
+        }
+
+        .card-description:hover {
+            border-color: #333;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px dashed #333;
+        }
+
+        .tag {
+            padding: 5px 12px;
+            border: 2px solid #333;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .tag.homework {
+            background: #ff9999;
+        }
+
+        .tag.project {
+            background: #99ccff;
+        }
+
+        .tag.task {
+            background: #99ff99;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 5px;
+        }
+
+        .color-option {
+            width: 25px;
+            height: 25px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.2);
+        }
+
+        .color-option.selected {
+            border-width: 3px;
+            transform: scale(1.15);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 3px solid #333;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+            opacity: 0;
+            transform: translateY(100px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            border: 4px solid #333;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .board {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .column {
+                min-height: 300px;
+            }
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📚 My Kanban Board 📝</h1>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="exportData()">💾 Export Data</button>
+        <button class="btn" onclick="document.getElementById('importFile').click()">📂 Import Data</button>
+        <button class="btn" onclick="clearAllData()">🗑️ Clear All</button>
+        <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+    </div>
+
+    <div class="board">
+        <div class="column" data-column="todo">
+            <div class="column-header">📋 TO DO</div>
+            <button class="add-card-btn" onclick="addCard('todo')">+ Add Card</button>
+            <div class="cards-container" id="todo-cards"></div>
+        </div>
+
+        <div class="column" data-column="inprogress">
+            <div class="column-header">⚡ IN PROGRESS</div>
+            <button class="add-card-btn" onclick="addCard('inprogress')">+ Add Card</button>
+            <div class="cards-container" id="inprogress-cards"></div>
+        </div>
+
+        <div class="column" data-column="done">
+            <div class="column-header">✅ DONE</div>
+            <button class="add-card-btn" onclick="addCard('done')">+ Add Card</button>
+            <div class="cards-container" id="done-cards"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <h2>Are you sure? 🤔</h2>
+            <p id="modalMessage"></p>
+            <div class="modal-buttons">
+                <button class="btn" onclick="closeModal()">Cancel</button>
+                <button class="btn" style="background: #ff6b6b;" onclick="confirmAction()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure
+        let cards = {
+            todo: [],
+            inprogress: [],
+            done: []
+        };
+
+        let draggedCard = null;
+        let confirmCallback = null;
+
+        const colors = ['#ffd54f', '#ffb3ba', '#bae1ff', '#baffc9', '#ffdfba'];
+
+        // Initialize app
+        function init() {
+            loadData();
+            if (cards.todo.length === 0 && cards.inprogress.length === 0 && cards.done.length === 0) {
+                loadSampleData();
+            }
+            renderAllCards();
+        }
+
+        // Load sample data
+        function loadSampleData() {
+            cards = {
+                todo: [
+                    { id: Date.now(), title: 'Math Homework', description: 'Complete Chapter 5 exercises', tag: 'homework', color: '#ffd54f' },
+                    { id: Date.now() + 1, title: 'Science Project', description: 'Research renewable energy', tag: 'project', color: '#bae1ff' }
+                ],
+                inprogress: [
+                    { id: Date.now() + 2, title: 'Read Book', description: 'Finish chapters 10-12', tag: 'task', color: '#baffc9' }
+                ],
+                done: [
+                    { id: Date.now() + 3, title: 'History Essay', description: 'Write about WWII', tag: 'homework', color: '#ffb3ba' }
+                ]
+            };
+            saveData();
+        }
+
+        // Add new card
+        function addCard(column) {
+            const card = {
+                id: Date.now(),
+                title: 'New Card',
+                description: 'Click to edit description...',
+                tag: 'task',
+                color: colors[0]
+            };
+            cards[column].push(card);
+            saveData();
+            renderColumn(column);
+            showToast('Card added! ✨');
+        }
+
+        // Render all columns
+        function renderAllCards() {
+            renderColumn('todo');
+            renderColumn('inprogress');
+            renderColumn('done');
+        }
+
+        // Render specific column
+        function renderColumn(column) {
+            const container = document.getElementById(`${column}-cards`);
+            container.innerHTML = '';
+
+            cards[column].forEach((card, index) => {
+                const cardEl = createCardElement(card, column, index);
+                container.appendChild(cardEl);
+            });
+        }
+
+        // Create card element
+        function createCardElement(card, column, index) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            cardEl.draggable = true;
+            cardEl.style.backgroundColor = card.color;
+            cardEl.dataset.cardId = card.id;
+            cardEl.dataset.column = column;
+
+            cardEl.innerHTML = `
+                <div class="card-header">
+                    <div class="card-title" contenteditable="true" onblur="updateCardTitle(${card.id}, '${column}', this.innerText)">${card.title}</div>
+                    <div class="card-controls">
+                        ${index > 0 ? `<button class="card-btn" onclick="moveCard('${column}', ${index}, ${index - 1})">↑</button>` : ''}
+                        ${index < cards[column].length - 1 ? `<button class="card-btn" onclick="moveCard('${column}', ${index}, ${index + 1})">↓</button>` : ''}
+                        <button class="card-btn" onclick="deleteCard(${card.id}, '${column}')">🗑️</button>
+                    </div>
+                </div>
+                <div class="card-description" contenteditable="true" onblur="updateCardDescription(${card.id}, '${column}', this.innerText)">${card.description}</div>
+                <div class="card-footer">
+                    <span class="tag ${card.tag}" onclick="cycleTag(${card.id}, '${column}')">${card.tag.toUpperCase()}</span>
+                    <div class="color-picker">
+                        ${colors.map(color => `
+                            <div class="color-option ${card.color === color ? 'selected' : ''}" 
+                                 style="background: ${color}" 
+                                 onclick="changeCardColor(${card.id}, '${column}', '${color}')"></div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Drag events
+            cardEl.addEventListener('dragstart', handleDragStart);
+            cardEl.addEventListener('dragend', handleDragEnd);
+
+            return cardEl;
+        }
+
+        // Update card title
+        function updateCardTitle(id, column, newTitle) {
+            const card = cards[column].find(c => c.id === id);
+            if (card) {
+                card.title = newTitle;
+                saveData();
+            }
+        }
+
+        // Update card description
+        function updateCardDescription(id, column, newDescription) {
+            const card = cards[column].find(c => c.id === id);
+            if (card) {
+                card.description = newDescription;
+                saveData();
+            }
+        }
+
+        // Cycle through tags
+        function cycleTag(id, column) {
+            const card = cards[column].find(c => c.id === id);
+            if (card) {
+                const tags = ['task', 'homework', 'project'];
+                const currentIndex = tags.indexOf(card.tag);
+                card.tag = tags[(currentIndex + 1) % tags.length];
+                saveData();
+                renderColumn(column);
+            }
+        }
+
+        // Change card color
+        function changeCardColor(id, column, color) {
+            const card = cards[column].find(c => c.id === id);
+            if (card) {
+                card.color = color;
+                saveData();
+                renderColumn(column);
+            }
+        }
+
+        // Move card within column
+        function moveCard(column, fromIndex, toIndex) {
+            const [card] = cards[column].splice(fromIndex, 1);
+            cards[column].splice(toIndex, 0, card);
+            saveData();
+            renderColumn(column);
+            showToast('Card moved! 📦');
+        }
+
+        // Delete card
+        function deleteCard(id, column) {
+            showConfirmModal('Delete this card?', () => {
+                cards[column] = cards[column].filter(c => c.id !== id);
+                saveData();
+                renderColumn(column);
+                showToast('Card deleted! 🗑️');
+            });
+        }
+
+        // Drag and drop handlers
+        function handleDragStart(e) {
+            draggedCard = {
+                id: parseInt(e.target.dataset.cardId),
+                fromColumn: e.target.dataset.column
+            };
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        // Setup drop zones
+        document.querySelectorAll('.cards-container').forEach(container => {
+            container.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const dragging = document.querySelector('.dragging');
+                if (afterElement == null) {
+                    container.appendChild(dragging);
+                } else {
+                    container.insertBefore(dragging, afterElement);
+                }
+            });
+
+            container.addEventListener('drop', e => {
+                e.preventDefault();
+                if (!draggedCard) return;
+
+                const toColumn = container.id.replace('-cards', '');
+                const card = cards[draggedCard.fromColumn].find(c => c.id === draggedCard.id);
+
+                if (card) {
+                    // Remove from old column
+                    cards[draggedCard.fromColumn] = cards[draggedCard.fromColumn].filter(c => c.id !== draggedCard.id);
+
+                    // Add to new column at correct position
+                    const afterElement = getDragAfterElement(container, e.clientY);
+                    if (afterElement == null) {
+                        cards[toColumn].push(card);
+                    } else {
+                        const afterId = parseInt(afterElement.dataset.cardId);
+                        const afterIndex = cards[toColumn].findIndex(c => c.id === afterId);
+                        cards[toColumn].splice(afterIndex, 0, card);
+                    }
+
+                    saveData();
+                    renderAllCards();
+                    showToast('Card moved! 🎯');
+                }
+
+                draggedCard = null;
+            });
+        });
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.card:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('kanbanCards', JSON.stringify(cards));
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('kanbanCards');
+            if (saved) {
+                cards = JSON.parse(saved);
+            }
+        }
+
+        // Export data
+        function exportData() {
+            const dataStr = JSON.stringify(cards, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `kanban-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            showToast('Data exported! 💾');
+        }
+
+        // Import data
+        function importData(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        cards = JSON.parse(e.target.result);
+                        saveData();
+                        renderAllCards();
+                        showToast('Data imported! 📂');
+                    } catch (error) {
+                        alert('Error importing data. Please check the file format.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Clear all data
+        function clearAllData() {
+            showConfirmModal('Clear all cards? This cannot be undone!', () => {
+                cards = { todo: [], inprogress: [], done: [] };
+                saveData();
+                renderAllCards();
+                showToast('All cards cleared! 🗑️');
+            });
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // Show confirmation modal
+        function showConfirmModal(message, callback) {
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('confirmModal').classList.add('show');
+            confirmCallback = callback;
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+            confirmCallback = null;
+        }
+
+        // Confirm action
+        function confirmAction() {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            closeModal();
+        }
+
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+</html>
