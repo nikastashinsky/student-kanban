@@ -2841,17 +2841,11 @@
 
         // ── Doodle ────────────────────────────────────────────────────────
 
-        const doodle = { drawing: false, lastX: 0, lastY: 0, strokes: [] };
-        const DOODLE_FADE = 1500; // ms
-
-        const DOODLE_IGNORE = 'button, input, [contenteditable], a, ' +
-            '.card, .dp-panel, .search-overlay, .modal, .feel-overlay, ' +
-            '.info-popup, .controls, .board-tabs-wrap, .archive-section, ' +
-            '.archive-toggle, .color-dropdown, .dp-mood-dropdown';
-
-        function isBackground(el) {
-            return !el.closest(DOODLE_IGNORE);
-        }
+        const doodle = { lastX: null, lastY: null, strokes: [] };
+        const DOODLE_FADE = 1500;
+        const DOODLE_BLOCK = 'button, input, select, textarea, [contenteditable], ' +
+            'a, label, .card, .dp-panel, .search-wrap, .modal-box, ' +
+            '.feel-modal, .info-popup';
 
         function initDoodle() {
             const canvas = document.getElementById('doodleCanvas');
@@ -2863,20 +2857,28 @@
                 canvas.width  = window.innerWidth;
                 canvas.height = window.innerHeight;
                 doodle.strokes = [];
+                doodle.lastX = null;
             }
             resize();
             window.addEventListener('resize', resize);
 
-            document.addEventListener('mousedown', e => {
-                if (e.button === 0 && isBackground(e.target)) {
-                    doodle.drawing = true;
-                    doodle.lastX   = e.clientX;
-                    doodle.lastY   = e.clientY;
+            // Use e.buttons (bitmask) on every mousemove — no mousedown state needed.
+            // Left button held = e.buttons === 1.
+            window.addEventListener('mousemove', e => {
+                if (e.buttons !== 1) {
+                    doodle.lastX = null;
+                    return;
                 }
-            });
-
-            document.addEventListener('mousemove', e => {
-                if (!doodle.drawing) return;
+                // Block drawing when directly over interactive elements
+                if (e.target.closest(DOODLE_BLOCK)) {
+                    doodle.lastX = null;
+                    return;
+                }
+                if (doodle.lastX === null) {
+                    doodle.lastX = e.clientX;
+                    doodle.lastY = e.clientY;
+                    return;
+                }
                 doodle.strokes.push({
                     x1: doodle.lastX, y1: doodle.lastY,
                     x2: e.clientX,    y2: e.clientY,
@@ -2886,10 +2888,10 @@
                 doodle.lastY = e.clientY;
             });
 
-            document.addEventListener('mouseup',    () => { doodle.drawing = false; });
-            document.addEventListener('mouseleave', () => { doodle.drawing = false; });
+            window.addEventListener('mouseup',    () => { doodle.lastX = null; });
+            window.addEventListener('mouseleave', () => { doodle.lastX = null; });
 
-            function render() {
+            (function render() {
                 const now = Date.now();
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 doodle.strokes = doodle.strokes.filter(s => now - s.t < DOODLE_FADE);
@@ -2898,13 +2900,12 @@
                     ctx.beginPath();
                     ctx.moveTo(s.x1, s.y1);
                     ctx.lineTo(s.x2, s.y2);
-                    ctx.strokeStyle = `rgba(70, 65, 60, ${alpha * 0.6})`;
-                    ctx.lineWidth   = 1.8;
+                    ctx.strokeStyle = `rgba(60, 55, 50, ${alpha * 0.65})`;
+                    ctx.lineWidth   = 2;
                     ctx.stroke();
                 });
                 requestAnimationFrame(render);
-            }
-            requestAnimationFrame(render);
+            })();
         }
 
         // ── PWA ───────────────────────────────────────────────────────────
