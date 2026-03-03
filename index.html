@@ -1321,6 +1321,89 @@
         .feel-trend-edit-opt:hover { background: rgba(0,0,0,0.05); }
         .feel-trend-edit-opt.sel { background: rgba(29,78,216,0.07); border-color: rgba(29,78,216,0.25); }
 
+        /* ── Frog check ── */
+        .dp-frog-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .dp-frog-row .dp-frog-input { flex: 1; }
+
+        .dp-frog-check-btn {
+            flex-shrink: 0;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            border: 1.5px solid #d0ccc8;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s;
+            margin-top: 5px;
+            padding: 0;
+        }
+
+        .dp-frog-check-btn:hover { border-color: #50a050; }
+
+        .dp-frog-check-btn.checked {
+            background: #50a050;
+            border-color: #50a050;
+        }
+
+        .dp-frog-check-btn.checked::after {
+            content: '';
+            position: absolute;
+            left: 5px; top: 2px;
+            width: 7px; height: 11px;
+            border: 2px solid #fff;
+            border-top: none; border-left: none;
+            transform: rotate(45deg);
+        }
+
+        .dp-frog-input.done {
+            text-decoration: line-through;
+            color: #bbb !important;
+        }
+
+        /* ── Frog jump animation ── */
+        .frog-jumper {
+            position: fixed;
+            left: 0;
+            bottom: 22vh;
+            z-index: 9999;
+            pointer-events: none;
+            font-size: 3.2em;
+            line-height: 1;
+            animation: frog-hop 2.4s ease-in-out forwards;
+        }
+
+        @keyframes frog-hop {
+            0%   { transform: translate(-80px,   0px); }
+            18%  { transform: translate(20vw,  -26vh); }
+            36%  { transform: translate(40vw,    0px); }
+            54%  { transform: translate(62vw,  -26vh); }
+            72%  { transform: translate(80vw,    0px); }
+            100% { transform: translate(115vw,   0px); }
+        }
+
+        .ribbit-word {
+            position: fixed;
+            font-family: 'Caveat', cursive;
+            font-size: 2em;
+            font-weight: 700;
+            color: #22a855;
+            z-index: 9999;
+            pointer-events: none;
+            animation: ribbit-pop 1s ease-out forwards;
+        }
+
+        @keyframes ribbit-pop {
+            0%   { opacity: 0; transform: scale(0.7) translateY(0); }
+            25%  { opacity: 1; transform: scale(1.2) translateY(-8px); }
+            65%  { opacity: 1; transform: scale(1.0) translateY(-14px); }
+            100% { opacity: 0; transform: scale(0.9) translateY(-28px); }
+        }
+
         /* mobile: full-height drawer from right, slightly narrower */
         @media (max-width: 480px) {
             .dp-panel { width: 100%; border-left: none; }
@@ -1406,9 +1489,13 @@
                     <div class="dp-label" style="margin-bottom:0">eat the frog</div>
                 </div>
                 <div class="dp-frog-hint">the one move that makes today a win</div>
-                <div class="dp-frog-input" id="dpFrog" contenteditable="true"
-                     data-placeholder="what's your biggest move today?"
-                     onblur="saveFrog(this.innerText)"></div>
+                <div class="dp-frog-row">
+                    <div class="dp-frog-input" id="dpFrog" contenteditable="true"
+                         data-placeholder="what's your biggest move today?"
+                         onblur="saveFrog(this.innerText)"></div>
+                    <button class="dp-frog-check-btn" id="dpFrogCheckBtn"
+                            onclick="toggleFrogDone()" style="display:none"></button>
+                </div>
             </div>
 
             <!-- Today's tasks -->
@@ -2191,7 +2278,7 @@
         }
 
         function freshDay(key) {
-            return { key: key || getTodayKey(), frog: '', tasks: [], gratefuls: ['','',''], mood: null };
+            return { key: key || getTodayKey(), frog: '', frogDone: false, tasks: [], gratefuls: ['','',''], mood: null };
         }
 
         function loadDailyData() {
@@ -2249,6 +2336,7 @@
             // frog
             const frogEl = document.getElementById('dpFrog');
             frogEl.textContent = daily.today.frog || '';
+            updateFrogCheckBtn();
 
             // tasks
             renderDailyTasks();
@@ -2366,8 +2454,52 @@
 
         function saveFrog(text) {
             daily.today.frog = text.trim();
+            if (!daily.today.frog) daily.today.frogDone = false;
             saveDailyData();
             updateDailyTrigger();
+            updateFrogCheckBtn();
+        }
+
+        function updateFrogCheckBtn() {
+            const btn = document.getElementById('dpFrogCheckBtn');
+            const frogEl = document.getElementById('dpFrog');
+            if (!btn) return;
+            const hasFrog = !!daily.today.frog;
+            btn.style.display = hasFrog ? 'block' : 'none';
+            btn.classList.toggle('checked', !!daily.today.frogDone);
+            frogEl.classList.toggle('done', !!daily.today.frogDone);
+        }
+
+        function toggleFrogDone() {
+            if (!daily.today.frog) return;
+            daily.today.frogDone = !daily.today.frogDone;
+            saveDailyData();
+            updateFrogCheckBtn();
+            if (daily.today.frogDone) triggerFrogAnimation();
+        }
+
+        function triggerFrogAnimation() {
+            const frog = document.createElement('div');
+            frog.className = 'frog-jumper';
+            frog.textContent = '🐸';
+            document.body.appendChild(frog);
+
+            function spawnRibbit(leftPct, bottomPct) {
+                const r = document.createElement('div');
+                r.className = 'ribbit-word';
+                r.textContent = 'ribbit';
+                r.style.left = leftPct + 'vw';
+                r.style.bottom = bottomPct + 'vh';
+                document.body.appendChild(r);
+                setTimeout(() => r.remove(), 1000);
+            }
+
+            // ribbit at first peak (~18% of 2.4s = 430ms)
+            setTimeout(() => spawnRibbit(18, 46), 430);
+            // ribbit at second peak (~54% of 2.4s = 1300ms)
+            setTimeout(() => spawnRibbit(60, 46), 1300);
+
+            setTimeout(() => frog.remove(), 2500);
         }
 
         function saveGrateful(idx, value) {
