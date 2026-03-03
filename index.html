@@ -1,0 +1,2632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#f9f7f4">
+    <link rel="icon" href="./icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Caveat', cursive;
+            background-color: #f9f7f4;
+            background-image: radial-gradient(circle, rgba(140,118,88,0.22) 1.2px, transparent 1.2px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+            padding: 40px 28px;
+            color: #2c2c2c;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 2.4em;
+            font-weight: 700;
+            color: #2c2c2c;
+            letter-spacing: -0.5px;
+            outline: none;
+            cursor: text;
+            border-radius: 4px;
+            padding: 2px 8px;
+            display: inline-block;
+            transition: background 0.15s;
+            min-width: 40px;
+        }
+
+        .header h1:hover,
+        .header h1:focus { background: rgba(0,0,0,0.04); }
+
+        .header h1:empty::before {
+            content: attr(data-placeholder);
+            color: #ccc;
+            pointer-events: none;
+        }
+
+        /* ── Board tabs ── */
+        .board-tabs-wrap {
+            max-width: 1120px;
+            margin: 0 auto;
+            border-bottom: 1.5px solid #e0dcd8;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .board-tabs {
+            display: flex;
+            align-items: flex-end;
+            gap: 0;
+            min-width: max-content;
+        }
+
+        .board-tab {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 16px 10px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1.5px;
+            font-family: 'Caveat', cursive;
+            font-size: 1em;
+            color: #b4acaa;
+            cursor: pointer;
+            transition: color 0.15s;
+            white-space: nowrap;
+        }
+
+        .board-tab:hover:not(.active) { color: #777; }
+
+        .board-tab.active {
+            color: #2c2c2c;
+            border-bottom-color: #2c2c2c;
+            font-weight: 700;
+        }
+
+        .tab-name { pointer-events: none; }
+        .board-tab.active .tab-name { pointer-events: auto; }
+
+        .tab-del {
+            font-size: 13px;
+            color: #ccc;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0 1px;
+            line-height: 1;
+            opacity: 0;
+            transition: all 0.12s;
+        }
+
+        .board-tab:hover .tab-del { opacity: 1; }
+        .tab-del:hover { color: #c05050; }
+
+        .board-tab-add {
+            padding: 8px 14px 10px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1.5px;
+            font-family: 'Caveat', cursive;
+            font-size: 1.3em;
+            color: #c8c4c0;
+            cursor: pointer;
+            transition: color 0.15s;
+            line-height: 1;
+        }
+
+        .board-tab-add:hover { color: #888; }
+
+        /* ── Controls ── */
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .btn {
+            padding: 6px 18px;
+            border: 1.5px solid #d4cfc9;
+            border-radius: 100px;
+            background: transparent;
+            font-family: 'Caveat', cursive;
+            font-size: 15px;
+            color: #a09890;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn:hover { color: #555; border-color: #aaa; }
+        .btn-danger { border-color: #e8c0c0; color: #c07070; }
+        .btn-danger:hover { background: rgba(200,80,80,0.05); border-color: #d09090; color: #a04848; }
+
+        .search-kbd {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.72em;
+            background: rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 3px;
+            padding: 1px 5px;
+            color: #bbb;
+        }
+
+        /* ── Board ── */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            max-width: 1120px;
+            margin: 0 auto;
+        }
+
+        /* ── Column ── */
+        .column-header {
+            font-size: 0.78em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+            border-bottom: 2px solid;
+            font-family: 'Caveat', cursive;
+        }
+
+        [data-column="todo"]       .column-header { color: #c97c4a; border-color: #c97c4a; }
+        [data-column="inprogress"] .column-header { color: #4a7cc9; border-color: #4a7cc9; }
+        [data-column="done"]       .column-header { color: #8aaa80; border-color: #8aaa80; }
+
+        .add-card-btn {
+            width: 100%;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            border: 1.5px dashed #d4cfc9;
+            border-radius: 5px;
+            background: transparent;
+            font-family: 'Caveat', cursive;
+            font-size: 15px;
+            color: #c4bdb5;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s;
+        }
+
+        .add-card-btn:hover { color: #888; border-color: #b0a8a0; }
+
+        .cards-container { min-height: 180px; }
+
+        /* ── Card ── */
+        .card {
+            background: #fff;
+            border: 1.5px solid rgba(0,0,0,0.06);
+            border-left: 3px solid #c97c4a;
+            border-radius: 4px;
+            padding: 12px 12px 10px;
+            margin-bottom: 9px;
+            cursor: grab;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            position: relative;
+            transition: box-shadow 0.15s, transform 0.15s;
+        }
+
+        .card:nth-child(odd)  { transform: rotate(-0.4deg); }
+        .card:nth-child(even) { transform: rotate( 0.3deg); }
+
+        .card:hover {
+            transform: rotate(0) translateY(-2px);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        }
+
+        .card.dragging { opacity: 0.3; cursor: grabbing; }
+        .card.highlight { box-shadow: 0 0 0 2px #1d4ed8 !important; transform: rotate(0) !important; }
+
+        /* Done column: faded */
+        [data-column="done"] .card { background: #f4f3f1; box-shadow: none; }
+        [data-column="done"] .card-title       { color: #9a928a !important; }
+        [data-column="done"] .card-description  { color: #b8b0a8 !important; }
+
+        /* card action buttons */
+        .card-actions {
+            position: absolute;
+            top: 8px; right: 8px;
+            display: flex; gap: 4px;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .card:hover .card-actions { opacity: 1; }
+
+        .card-btn {
+            background: transparent;
+            border: 1.5px solid #e4e0dc;
+            border-radius: 4px;
+            width: 24px; height: 24px;
+            cursor: pointer;
+            font-size: 11px;
+            display: flex; align-items: center; justify-content: center;
+            color: #c8c0b8;
+            transition: all 0.15s;
+            line-height: 1;
+        }
+
+        .done-btn:hover   { border-color: #80c880; color: #50a050; background: rgba(80,200,80,0.06); }
+        .delete-btn:hover { border-color: #e89090; color: #c05050; background: rgba(200,80,80,0.06); }
+
+        /* card top: priority + title */
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 4px;
+            margin-bottom: 3px;
+        }
+
+        .priority-btn {
+            flex-shrink: 0;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-family: 'Caveat', cursive;
+            font-size: 1.55em;
+            font-weight: 700;
+            line-height: 1;
+            color: rgba(0,0,0,0.1);
+            padding: 1px 2px 0 0;
+            transition: color 0.15s, transform 0.2s;
+            user-select: none;
+        }
+
+        .priority-btn:hover { color: rgba(29,78,216,0.35); }
+        .priority-btn.active {
+            color: #1d4ed8;
+            transform: rotate(-12deg) scale(1.15);
+            text-shadow: 0 0 10px rgba(29,78,216,0.25);
+        }
+
+        /* card content – Helvetica */
+        .card-title {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #2c2c2c;
+            cursor: text;
+            padding: 2px 52px 2px 0;
+            border: 1.5px solid transparent;
+            border-radius: 3px;
+            line-height: 1.35;
+            flex: 1; min-width: 0;
+        }
+
+        .card-title:focus {
+            outline: none;
+            border-color: rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.015);
+        }
+
+        .card-description {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.8em;
+            color: #aaa;
+            cursor: text;
+            padding: 2px 4px;
+            border: 1.5px solid transparent;
+            border-radius: 3px;
+            min-height: 18px;
+            line-height: 1.45;
+            display: block;
+        }
+
+        .card-description:focus {
+            outline: none;
+            border-color: rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.015);
+        }
+
+        .card-description:empty::before { content: 'note...'; color: #ddd; pointer-events: none; }
+
+        /* ── Checklist ── */
+        .card-checklist {
+            margin: 7px 0 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .checklist-check {
+            flex-shrink: 0;
+            width: 13px; height: 13px;
+            border: 1.5px solid #c8c4c0;
+            border-radius: 3px;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.12s;
+            padding: 0;
+        }
+
+        .checklist-check.checked { border-color: #50a050; background: #50a050; }
+        .checklist-check.checked::after {
+            content: '';
+            position: absolute;
+            left: 2px; top: -1px;
+            width: 4px; height: 7px;
+            border: 1.5px solid #fff;
+            border-top: none; border-left: none;
+            transform: rotate(45deg);
+        }
+
+        .checklist-text {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.78em;
+            color: #666;
+            flex: 1;
+            cursor: text;
+            outline: none;
+            border: 1px solid transparent;
+            border-radius: 2px;
+            padding: 1px 3px;
+            line-height: 1.4;
+            min-width: 0;
+        }
+
+        .checklist-text:focus { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.015); }
+        .checklist-text.done { text-decoration: line-through; color: #bbb; }
+
+        .checklist-del {
+            background: transparent;
+            border: none;
+            color: #ddd;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            padding: 0 2px;
+            opacity: 0;
+            transition: all 0.12s;
+            flex-shrink: 0;
+        }
+
+        .checklist-item:hover .checklist-del { opacity: 1; }
+        .checklist-del:hover { color: #e88080; }
+
+        .add-step-btn {
+            font-family: 'Caveat', cursive;
+            font-size: 0.82em;
+            color: #d0ccc8;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 2px 0 0 0;
+            text-align: left;
+            transition: color 0.12s;
+            display: block;
+            opacity: 0;
+        }
+
+        .card:hover .add-step-btn { opacity: 1; }
+        .add-step-btn:hover { color: #888; }
+
+        /* card footer */
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .tag {
+            font-family: 'Caveat', cursive;
+            font-size: 0.82em;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            padding: 2px 10px;
+            border-radius: 100px;
+            cursor: pointer;
+            border: 1.5px solid;
+            transition: opacity 0.15s;
+        }
+
+        .tag:hover { opacity: 0.72; }
+        .tag.task    { color: #50a050; border-color: rgba(80,160,80,0.35);   background: rgba(80,160,80,0.07); }
+        .tag.idea    { color: #b05090; border-color: rgba(176,80,144,0.35);  background: rgba(176,80,144,0.07); }
+        .tag.project { color: #4a7cc9; border-color: rgba(74,124,201,0.35); background: rgba(74,124,201,0.07); }
+
+        /* ── Color picker dropdown ── */
+        .color-picker-wrap { position: relative; }
+
+        .color-toggle-btn {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(0,0,0,0.15);
+            cursor: pointer;
+            display: block;
+            transition: transform 0.12s, box-shadow 0.12s;
+            padding: 0;
+        }
+
+        .color-toggle-btn:hover { transform: scale(1.25); box-shadow: 0 0 0 2px rgba(0,0,0,0.08); }
+
+        .color-dropdown {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 7px);
+            right: 0;
+            background: #fff;
+            border: 1.5px solid #e8e4e0;
+            border-radius: 8px;
+            padding: 8px 10px;
+            flex-direction: row;
+            gap: 7px;
+            z-index: 100;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.09);
+        }
+
+        .color-dropdown.open { display: flex; }
+
+        .color-dot {
+            width: 15px; height: 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1.5px solid rgba(0,0,0,0.1);
+            transition: transform 0.12s;
+            flex-shrink: 0;
+        }
+
+        .color-dot:hover { transform: scale(1.3); }
+        .color-dot.selected { border-color: rgba(0,0,0,0.35); transform: scale(1.18); }
+
+        /* ── Archive ── */
+        .archive-section {
+            max-width: 1120px;
+            margin: 44px auto 0;
+        }
+
+        .archive-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1.5px dashed #d8d4d0;
+            padding-top: 16px;
+            cursor: pointer;
+            color: #c4bcb4;
+            font-size: 0.78em;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            user-select: none;
+            transition: color 0.15s;
+        }
+
+        .archive-toggle:hover { color: #888; }
+        .archive-arrow { font-size: 9px; transition: transform 0.2s; }
+        .archive-toggle.open .archive-arrow { transform: rotate(90deg); }
+        .archive-count { color: #d8d4d0; letter-spacing: 0; font-weight: 400; font-size: 1.1em; }
+
+        .archive-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            padding: 16px 0 24px;
+        }
+
+        .archive-grid.open { display: grid; }
+
+        .archive-card {
+            background: #f4f3f1;
+            border: 1.5px solid #e8e4e0;
+            border-radius: 4px;
+            padding: 10px 12px;
+        }
+
+        .archive-card-title {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.82em;
+            font-weight: 600;
+            color: #b4aca4;
+            line-height: 1.3;
+        }
+
+        .archive-card-desc {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.76em;
+            color: #ccc4bc;
+            margin-top: 2px;
+            line-height: 1.3;
+        }
+
+        .archive-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .archive-tag {
+            font-family: 'Caveat', cursive;
+            font-size: 0.72em;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: #c8c0b8;
+            border: 1px solid #ddd;
+            padding: 1px 8px;
+            border-radius: 100px;
+        }
+
+        .archive-actions { display: flex; gap: 5px; }
+
+        .archive-btn {
+            background: transparent;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 2px 9px;
+            font-family: 'Caveat', cursive;
+            font-size: 13px;
+            color: #c4bcb4;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .archive-btn:hover { border-color: #b0a8a0; color: #777; }
+
+        /* ── Search overlay ── */
+        .search-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.28);
+            z-index: 2000;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 80px;
+        }
+
+        .search-overlay.show { display: flex; }
+
+        .search-wrap {
+            background: #fff;
+            border: 1.5px solid #e0dcda;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+            overflow: hidden;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: none;
+            border-bottom: 1.5px solid #f0ece8;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.95em;
+            color: #2c2c2c;
+            outline: none;
+            background: transparent;
+        }
+
+        .search-input::placeholder { color: #ccc; }
+
+        .search-results { max-height: 340px; overflow-y: auto; }
+
+        .search-result {
+            padding: 11px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #f4f0ec;
+            transition: background 0.12s;
+        }
+
+        .search-result:hover { background: #f9f7f4; }
+        .search-result:last-child { border-bottom: none; }
+
+        .search-result-title {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.88em;
+            font-weight: 600;
+            color: #2c2c2c;
+        }
+
+        .search-result-title mark {
+            background: rgba(29,78,216,0.1);
+            color: #1d4ed8;
+            border-radius: 2px;
+            padding: 0 1px;
+        }
+
+        .search-result-meta {
+            display: flex;
+            gap: 8px;
+            margin-top: 3px;
+            font-family: 'Caveat', cursive;
+            font-size: 0.82em;
+            color: #b4acaa;
+        }
+
+        .search-meta-board { color: #888; }
+
+        .search-empty {
+            padding: 24px;
+            text-align: center;
+            font-family: 'Caveat', cursive;
+            color: #ccc;
+            font-size: 1em;
+        }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            background: rgba(44,44,44,0.88);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-family: 'Caveat', cursive;
+            font-size: 15px;
+            opacity: 0;
+            transform: translateY(14px);
+            transition: all 0.2s;
+            z-index: 1000;
+        }
+
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        /* ── Modal ── */
+        .modal {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.18);
+            z-index: 1000;
+            justify-content: center; align-items: center;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-box {
+            background: #fff;
+            border: 1.5px solid #e0dcda;
+            border-radius: 10px;
+            padding: 28px 32px;
+            max-width: 300px; width: 90%;
+            text-align: center;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+            font-family: 'Caveat', cursive;
+        }
+
+        .modal-box h2 { font-size: 1.5em; color: #2c2c2c; margin-bottom: 6px; }
+        .modal-box p  { color: #999; font-size: 1.05em; margin-bottom: 20px; }
+        .modal-buttons { display: flex; gap: 10px; justify-content: center; }
+
+        /* ── Responsive ── */
+        @media (max-width: 720px) {
+            .board { grid-template-columns: 1fr; }
+            body { padding: 24px 14px; }
+        }
+
+        @media (min-width: 721px) and (max-width: 900px) {
+            .board { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* ── Daily panel button ── */
+        .dp-trigger {
+            position: fixed;
+            top: 16px; right: 20px;
+            z-index: 600;
+            width: 40px; height: 40px;
+            background: #fff;
+            border: 1.5px solid #d4cfc9;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            font-size: 1.1em;
+            transition: transform 0.15s, box-shadow 0.15s;
+            color: #a09890;
+            font-family: 'Caveat', cursive;
+            font-weight: 700;
+        }
+
+        .dp-trigger:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.11);
+            color: #555;
+        }
+
+        .dp-trigger.has-content { border-color: #c97c4a; color: #c97c4a; }
+
+        /* ── Daily panel ── */
+        .dp-panel {
+            position: fixed;
+            top: 0; right: 0;
+            width: 310px;
+            height: 100vh;
+            background: #fff;
+            border-left: 1.5px solid #e8e4e0;
+            box-shadow: -6px 0 28px rgba(0,0,0,0.08);
+            transform: translateX(100%);
+            transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .dp-panel.open { transform: translateX(0); }
+
+        .dp-panel::-webkit-scrollbar { width: 3px; }
+        .dp-panel::-webkit-scrollbar-track { background: transparent; }
+        .dp-panel::-webkit-scrollbar-thumb { background: #e8e4e0; border-radius: 2px; }
+
+        /* panel header */
+        .dp-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 18px 14px;
+            border-bottom: 1.5px solid #f0ece8;
+            flex-shrink: 0;
+        }
+
+        .dp-date {
+            font-family: 'Caveat', cursive;
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #2c2c2c;
+        }
+
+        .dp-close {
+            background: transparent;
+            border: none;
+            font-size: 1.4em;
+            color: #c4bcb4;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 2px;
+            transition: color 0.12s;
+        }
+
+        .dp-close:hover { color: #777; }
+
+        /* panel scrollable body */
+        .dp-body {
+            overflow-y: auto;
+            flex: 1;
+            padding: 0 18px 32px;
+        }
+
+        /* sections */
+        .dp-section {
+            padding: 16px 0;
+            border-bottom: 1.5px dashed #ede9e5;
+        }
+
+        .dp-section:last-child { border-bottom: none; }
+
+        .dp-label {
+            font-family: 'Caveat', cursive;
+            font-size: 0.72em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #c4bcb4;
+            margin-bottom: 10px;
+        }
+
+        /* ── Frog section ── */
+        .dp-frog-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .dp-frog-emoji { font-size: 1.4em; line-height: 1; }
+
+        .dp-frog-hint {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.72em;
+            color: #c4bcb4;
+            margin-bottom: 8px;
+        }
+
+        .dp-frog-input {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #2c2c2c;
+            line-height: 1.45;
+            min-height: 22px;
+            padding: 6px 10px;
+            background: rgba(80, 200, 80, 0.04);
+            border: 1.5px solid rgba(80, 180, 80, 0.18);
+            border-radius: 5px;
+            outline: none;
+            cursor: text;
+        }
+
+        .dp-frog-input:focus { border-color: rgba(80, 180, 80, 0.4); }
+
+        .dp-frog-input:empty::before {
+            content: attr(data-placeholder);
+            color: #ccc;
+            font-weight: 400;
+            pointer-events: none;
+        }
+
+        /* ── Task list ── */
+        .dp-task {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0;
+        }
+
+        .dp-task-check {
+            flex-shrink: 0;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            border: 1.5px solid #d0ccc8;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.12s;
+            padding: 0;
+        }
+
+        .dp-task-check.checked { border-color: #50a050; background: #50a050; }
+        .dp-task-check.checked::after {
+            content: '';
+            position: absolute;
+            left: 3px; top: 1px;
+            width: 5px; height: 8px;
+            border: 1.5px solid #fff;
+            border-top: none; border-left: none;
+            transform: rotate(45deg);
+        }
+
+        .dp-task-text {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.84em;
+            color: #333;
+            flex: 1;
+            outline: none;
+            border: 1px solid transparent;
+            border-radius: 2px;
+            padding: 1px 3px;
+            line-height: 1.45;
+            cursor: text;
+            min-width: 0;
+        }
+
+        .dp-task-text:focus { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.015); }
+        .dp-task.done .dp-task-text { text-decoration: line-through; color: #bbb; }
+
+        .dp-task-del {
+            background: transparent;
+            border: none;
+            color: #ddd;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            padding: 0 2px;
+            opacity: 0;
+            transition: all 0.12s;
+            flex-shrink: 0;
+        }
+
+        .dp-task:hover .dp-task-del { opacity: 1; }
+        .dp-task-del:hover { color: #e88080; }
+
+        .dp-add-task {
+            font-family: 'Caveat', cursive;
+            font-size: 0.88em;
+            color: #c8c4c0;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 6px 0 0;
+            transition: color 0.12s;
+            display: block;
+        }
+
+        .dp-add-task:hover { color: #777; }
+
+        /* ── Gratefuls ── */
+        .dp-grateful-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .dp-grateful-num {
+            font-family: 'Caveat', cursive;
+            font-size: 0.85em;
+            color: #d0ccc8;
+            width: 12px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .dp-grateful-input {
+            flex: 1;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.82em;
+            color: #333;
+            border: none;
+            border-bottom: 1.5px solid #ede9e5;
+            background: transparent;
+            padding: 3px 2px;
+            outline: none;
+            transition: border-color 0.12s;
+        }
+
+        .dp-grateful-input:focus { border-bottom-color: #c0b8b0; }
+        .dp-grateful-input::placeholder { color: #ddd; }
+
+        /* ── Mood dropdown ── */
+        .dp-mood-wrap { position: relative; }
+
+        .dp-mood-trigger {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.84em;
+            color: #aaa;
+            background: transparent;
+            border: 1.5px solid #e8e4e0;
+            border-radius: 8px;
+            padding: 7px 12px;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            transition: border-color 0.12s;
+        }
+
+        .dp-mood-trigger:hover { border-color: #c8c4c0; }
+        .dp-mood-trigger.has-mood { color: #2c2c2c; }
+        .dp-mood-trigger-emoji { font-size: 1.15em; line-height: 1; }
+        .dp-mood-trigger-label { flex: 1; }
+        .dp-mood-caret { font-size: 0.75em; color: #ccc; margin-left: auto; }
+
+        .dp-mood-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: #fff;
+            border: 1.5px solid #e8e4e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            z-index: 600;
+            overflow: hidden;
+        }
+
+        .dp-mood-dropdown.open { display: block; }
+
+        .dp-mood-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.84em;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .dp-mood-option:hover { background: rgba(0,0,0,0.03); }
+        .dp-mood-option.selected { background: rgba(29,78,216,0.05); color: #1d4ed8; }
+        .dp-mood-option-emoji { font-size: 1.15em; }
+
+        .dp-log-btn {
+            font-family: 'Caveat', cursive;
+            font-size: 0.88em;
+            color: #b4acaa;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.12s;
+        }
+
+        .dp-log-btn:hover { color: #2c2c2c; }
+
+        /* ── Feeling Log Overlay ── */
+        .feel-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(44,44,44,0.32);
+            z-index: 700;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feel-overlay.open { display: flex; }
+
+        .feel-modal {
+            background: #f9f7f4;
+            border-radius: 14px;
+            width: min(500px, 92vw);
+            max-height: 86vh;
+            overflow-y: auto;
+            padding: 26px 26px 22px;
+            position: relative;
+        }
+
+        .feel-modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .feel-modal-title {
+            font-family: 'Caveat', cursive;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #2c2c2c;
+        }
+
+        .feel-close {
+            background: transparent;
+            border: none;
+            font-size: 1.4em;
+            color: #ccc;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 2px;
+        }
+
+        .feel-close:hover { color: #777; }
+
+        .feel-section-title {
+            font-family: 'Caveat', cursive;
+            font-size: 0.72em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #c4bcb4;
+            margin-bottom: 14px;
+        }
+
+        .feel-trend { margin-bottom: 24px; }
+
+        .feel-trend-days {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .feel-trend-day {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .feel-trend-label {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.62em;
+            color: #c4bcb4;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .feel-trend-emoji { font-size: 1.15em; line-height: 1; min-height: 1.15em; }
+
+        .feel-trend-bar-wrap {
+            width: 100%;
+            height: 36px;
+            background: rgba(0,0,0,0.04);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feel-trend-bar {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            border-radius: 4px;
+            transition: height 0.35s ease;
+        }
+
+        .feel-vibe {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.78em;
+            color: #aaa;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .feel-divider {
+            border: none;
+            border-top: 1.5px dashed #ede9e5;
+            margin: 20px 0;
+        }
+
+        .feel-cal-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .feel-cal-month {
+            font-family: 'Caveat', cursive;
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #2c2c2c;
+        }
+
+        .feel-cal-btn {
+            background: transparent;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: color 0.12s;
+        }
+
+        .feel-cal-btn:hover { color: #555; }
+
+        .feel-cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+        }
+
+        .feel-cal-dow {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.6em;
+            color: #c4bcb4;
+            text-align: center;
+            text-transform: uppercase;
+            padding: 2px 0 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .feel-cal-cell {
+            aspect-ratio: 1;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .feel-cal-cell.today-cell { outline: 2px solid rgba(29,78,216,0.3); outline-offset: -2px; }
+        .feel-cal-day-num {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.65em;
+            color: #bbb;
+            line-height: 1;
+            position: absolute;
+            top: 3px; left: 4px;
+        }
+
+        .feel-cal-emoji { font-size: 1em; line-height: 1; margin-top: 4px; }
+
+        /* trend day editing */
+        .feel-trend-day { cursor: pointer; border-radius: 6px; padding: 3px; transition: background 0.1s; }
+        .feel-trend-day:hover { background: rgba(0,0,0,0.03); }
+        .feel-trend-day.editing { background: rgba(29,78,216,0.05); }
+
+        .feel-trend-edit-row { padding: 8px 0 2px; }
+
+        .feel-trend-edit-label {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.72em;
+            color: #bbb;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .feel-trend-edit-moods {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 3px;
+        }
+
+        .feel-trend-edit-opt {
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 6px;
+            border: 1.5px solid transparent;
+            padding: 3px 5px;
+            background: transparent;
+            line-height: 1;
+            transition: all 0.1s;
+        }
+
+        .feel-trend-edit-opt:hover { background: rgba(0,0,0,0.05); }
+        .feel-trend-edit-opt.sel { background: rgba(29,78,216,0.07); border-color: rgba(29,78,216,0.25); }
+
+        /* mobile: full-height drawer from right, slightly narrower */
+        @media (max-width: 480px) {
+            .dp-panel { width: 100%; border-left: none; }
+            .dp-trigger { top: 12px; right: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 id="siteTitle" contenteditable="true" spellcheck="false" data-placeholder="name your space"
+            onblur="saveTitle(this.innerText)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">kanban</h1>
+    </div>
+
+    <!-- Board tabs -->
+    <div class="board-tabs-wrap">
+        <div class="board-tabs" id="boardTabs"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="openSearch()">search <kbd class="search-kbd">⌘K</kbd></button>
+        <button class="btn" onclick="exportCardsCSV()">↓ cards</button>
+        <button class="btn" onclick="exportDailyCSV()">↓ daily log</button>
+        <button class="btn" onclick="document.getElementById('csvImportInput').click()">↑ import</button>
+        <button class="btn btn-danger" onclick="clearAllData()">clear all</button>
+    </div>
+    <input type="file" id="csvImportInput" accept=".csv" style="display:none"
+        onchange="importCardsCSV(this.files[0]); this.value=''">
+
+    <div class="board">
+        <div class="column" data-column="todo">
+            <div class="column-header">to do</div>
+            <button class="add-card-btn" onclick="addCard('todo')">+ add card</button>
+            <div class="cards-container" id="todo-cards"></div>
+        </div>
+
+        <div class="column" data-column="inprogress">
+            <div class="column-header">in progress</div>
+            <button class="add-card-btn" onclick="addCard('inprogress')">+ add card</button>
+            <div class="cards-container" id="inprogress-cards"></div>
+        </div>
+
+        <div class="column" data-column="done">
+            <div class="column-header">done</div>
+            <button class="add-card-btn" onclick="addCard('done')">+ add card</button>
+            <div class="cards-container" id="done-cards"></div>
+        </div>
+    </div>
+
+    <div class="archive-section">
+        <div class="archive-toggle" id="archiveToggle" onclick="toggleArchive()">
+            <span class="archive-arrow">▶</span>
+            archive
+            <span class="archive-count" id="archiveCount"></span>
+        </div>
+        <div class="archive-grid" id="archiveGrid"></div>
+    </div>
+
+    <!-- Daily panel trigger -->
+    <button class="dp-trigger" id="dpTrigger" onclick="toggleDailyPanel()" title="daily">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3.5" y="1.5" width="11" height="15" rx="1.2" stroke="currentColor" stroke-width="1.4"/>
+            <line x1="6.5" y1="1.5" x2="6.5" y2="16.5" stroke="currentColor" stroke-width="1.4"/>
+            <line x1="9" y1="5.5" x2="13" y2="5.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            <line x1="9" y1="8.5" x2="13" y2="8.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            <line x1="9" y1="11.5" x2="11.5" y2="11.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+    </button>
+
+    <!-- Daily panel -->
+    <div class="dp-panel" id="dpPanel">
+        <div class="dp-head">
+            <div class="dp-date" id="dpDate"></div>
+            <button class="dp-close" onclick="toggleDailyPanel()">×</button>
+        </div>
+        <div class="dp-body">
+
+            <!-- 🐸 Eat the frog -->
+            <div class="dp-section">
+                <div class="dp-frog-header">
+                    <span class="dp-frog-emoji">🐸</span>
+                    <div class="dp-label" style="margin-bottom:0">eat the frog</div>
+                </div>
+                <div class="dp-frog-hint">the one move that makes today a win</div>
+                <div class="dp-frog-input" id="dpFrog" contenteditable="true"
+                     data-placeholder="what's your biggest move today?"
+                     onblur="saveFrog(this.innerText)"></div>
+            </div>
+
+            <!-- Today's tasks -->
+            <div class="dp-section">
+                <div class="dp-label">today</div>
+                <div id="dpTaskList"></div>
+                <button class="dp-add-task" onclick="addDailyTask()">+ add task</button>
+            </div>
+
+            <!-- Gratefuls -->
+            <div class="dp-section">
+                <div class="dp-label">grateful for</div>
+                <div class="dp-grateful-row">
+                    <span class="dp-grateful-num">1</span>
+                    <input class="dp-grateful-input" id="dpGrateful0" type="text"
+                           placeholder="something good..." oninput="saveGrateful(0,this.value)">
+                </div>
+                <div class="dp-grateful-row">
+                    <span class="dp-grateful-num">2</span>
+                    <input class="dp-grateful-input" id="dpGrateful1" type="text"
+                           placeholder="something good..." oninput="saveGrateful(1,this.value)">
+                </div>
+                <div class="dp-grateful-row">
+                    <span class="dp-grateful-num">3</span>
+                    <input class="dp-grateful-input" id="dpGrateful2" type="text"
+                           placeholder="something good..." oninput="saveGrateful(2,this.value)">
+                </div>
+            </div>
+
+            <!-- Mood -->
+            <div class="dp-section">
+                <div class="dp-label">feeling</div>
+                <div class="dp-mood-wrap" id="dpMoodWrap">
+                    <button class="dp-mood-trigger" id="dpMoodTrigger" onclick="toggleMoodDropdown()">
+                        <span class="dp-mood-trigger-emoji" id="dpMoodTriggerEmoji"></span>
+                        <span class="dp-mood-trigger-label" id="dpMoodTriggerLabel">how are you feeling?</span>
+                        <span class="dp-mood-caret">▾</span>
+                    </button>
+                    <div class="dp-mood-dropdown" id="dpMoodDropdown"></div>
+                </div>
+            </div>
+            <div class="dp-section" style="border-bottom:none; padding-top:10px; padding-bottom:6px;">
+                <button class="dp-log-btn" onclick="openFeelLog()">feeling log ↗</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Search overlay -->
+    <div class="search-overlay" id="searchOverlay" onclick="handleSearchOverlayClick(event)">
+        <div class="search-wrap">
+            <input class="search-input" id="searchInput" type="text" placeholder="search cards..." autocomplete="off">
+            <div class="search-results" id="searchResults"></div>
+        </div>
+    </div>
+
+    <!-- Feeling Log overlay -->
+    <div class="feel-overlay" id="feelOverlay" onclick="handleFeelOverlayClick(event)">
+        <div class="feel-modal" id="feelModal">
+            <div class="feel-modal-head">
+                <span class="feel-modal-title">feeling log</span>
+                <button class="feel-close" onclick="closeFeelLog()">×</button>
+            </div>
+            <div class="feel-trend">
+                <div class="feel-section-title">7-day trend</div>
+                <div class="feel-trend-days" id="feelTrendDays"></div>
+                <div class="feel-trend-edit-row" id="feelTrendEditRow"></div>
+                <div class="feel-vibe" id="feelVibe"></div>
+            </div>
+            <hr class="feel-divider">
+            <div class="feel-cal-nav">
+                <button class="feel-cal-btn" onclick="shiftCalMonth(-1)">‹</button>
+                <span class="feel-cal-month" id="feelCalMonth"></span>
+                <button class="feel-cal-btn" onclick="shiftCalMonth(1)">›</button>
+            </div>
+            <div class="feel-cal-grid" id="feelCalGrid"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="modal" id="confirmModal">
+        <div class="modal-box">
+            <h2>sure?</h2>
+            <p id="modalMessage"></p>
+            <div class="modal-buttons">
+                <button class="btn" onclick="closeModal()">cancel</button>
+                <button class="btn btn-danger" onclick="confirmAction()">yes, do it</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── State ─────────────────────────────────────────────────────────
+
+        let boards        = [];   // [{ id, name, cards: { todo, inprogress, done, archived } }]
+        let activeBoardId = '';
+        let cards         = {};   // reference → active board's cards object
+        let draggedCard   = null;
+        let confirmCallback = null;
+        let archiveOpen   = false;
+
+        const COLORS = ['#c97c4a', '#c94a7c', '#4a7cc9', '#4ab86a', '#8a4ac9'];
+        const TAGS   = ['task', 'idea', 'project'];
+        const COLS   = ['todo', 'inprogress', 'done'];
+
+        // ── Init ──────────────────────────────────────────────────────────
+
+        function init() {
+            loadData();
+            loadTitle();
+            loadDailyData();
+            const allEmpty = COLS.every(c => !cards[c].length) && !cards.archived.length;
+            if (allEmpty) loadSampleData();
+            renderBoardTabs();
+            renderAll();
+            updateDailyTrigger();
+            setupDropZones();
+            setupColorPickerDismiss();
+            setupKeyboard();
+            if (daily._archivedYesterday) {
+                delete daily._archivedYesterday;
+                setTimeout(() => showToast('new day — yesterday archived ✓'), 600);
+            }
+        }
+
+        function loadSampleData() {
+            const t = Date.now();
+            cards.todo = [
+                { id: t,     title: 'Design mockups',  description: 'Sketch out main screens', tag: 'project', color: COLORS[2], priority: false, checklist: [] },
+                { id: t + 1, title: 'Grocery run',     description: '',                        tag: 'task',    color: COLORS[0], priority: false, checklist: [] },
+            ];
+            cards.inprogress = [
+                { id: t + 2, title: 'Write proposal',  description: 'First draft due Friday',  tag: 'project', color: COLORS[3], priority: true,
+                  checklist: [
+                      { id: t + 10, text: 'outline sections', done: true  },
+                      { id: t + 11, text: 'draft intro',      done: false },
+                  ]
+                },
+            ];
+            cards.done     = [];
+            cards.archived = [];
+            saveData();
+        }
+
+        // ── Board tabs ────────────────────────────────────────────────────
+
+        function renderBoardTabs() {
+            const container = document.getElementById('boardTabs');
+            container.innerHTML = '';
+
+            boards.forEach(board => {
+                const tab = document.createElement('div');
+                tab.className = 'board-tab' + (board.id === activeBoardId ? ' active' : '');
+                tab.dataset.boardId = board.id;
+                tab.innerHTML = `
+                    <span class="tab-name" ondblclick="event.stopPropagation(); startRenameBoard('${board.id}')">${esc(board.name)}</span>
+                    ${boards.length > 1 ? `<button class="tab-del" onclick="event.stopPropagation(); deleteBoard('${board.id}')" title="remove">×</button>` : ''}
+                `;
+                tab.addEventListener('click', () => switchBoard(board.id));
+                container.appendChild(tab);
+            });
+
+            const addBtn = document.createElement('button');
+            addBtn.className = 'board-tab-add';
+            addBtn.textContent = '+';
+            addBtn.title = 'add board';
+            addBtn.onclick = addBoard;
+            container.appendChild(addBtn);
+        }
+
+        function switchBoard(id) {
+            if (id === activeBoardId) return;
+            activeBoardId = id;
+            cards = boards.find(b => b.id === id).cards;
+            archiveOpen = false;
+            document.getElementById('archiveToggle').classList.remove('open');
+            document.getElementById('archiveGrid').classList.remove('open');
+            saveData();
+            renderBoardTabs();
+            renderAll();
+        }
+
+        function addBoard() {
+            const newBoard = {
+                id: 'b' + Date.now(),
+                name: 'new board',
+                cards: { todo: [], inprogress: [], done: [], archived: [] }
+            };
+            boards.push(newBoard);
+            activeBoardId = newBoard.id;
+            cards = newBoard.cards;
+            archiveOpen = false;
+            saveData();
+            renderBoardTabs();
+            renderAll();
+            // auto-rename
+            setTimeout(() => startRenameBoard(newBoard.id), 60);
+        }
+
+        function deleteBoard(boardId) {
+            if (boards.length === 1) { showToast("can't delete the last board"); return; }
+            const board = boards.find(b => b.id === boardId);
+            showModal(`delete "${board.name}" and all its cards?`, () => {
+                boards = boards.filter(b => b.id !== boardId);
+                if (activeBoardId === boardId) {
+                    activeBoardId = boards[0].id;
+                    cards = boards[0].cards;
+                }
+                saveData();
+                renderBoardTabs();
+                renderAll();
+            });
+        }
+
+        function startRenameBoard(boardId) {
+            const board = boards.find(b => b.id === boardId);
+            if (!board) return;
+            const tab = document.querySelector(`[data-board-id="${boardId}"]`);
+            if (!tab) return;
+            const span = tab.querySelector('.tab-name');
+            const orig = board.name;
+            span.contentEditable = 'true';
+            span.focus();
+            // select all text
+            const range = document.createRange();
+            range.selectNodeContents(span);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+
+            const finish = () => {
+                span.contentEditable = 'false';
+                board.name = span.innerText.trim() || orig;
+                span.innerText = board.name;
+                saveData();
+            };
+            span.addEventListener('blur', finish, { once: true });
+            span.addEventListener('keydown', e => {
+                if (e.key === 'Enter')  { e.preventDefault(); span.blur(); }
+                if (e.key === 'Escape') { span.innerText = orig; span.blur(); }
+            });
+        }
+
+        // ── Render ────────────────────────────────────────────────────────
+
+        function renderAll() {
+            COLS.forEach(renderColumn);
+            renderArchive();
+        }
+
+        function renderColumn(col) {
+            const container = document.getElementById(`${col}-cards`);
+            container.innerHTML = '';
+            cards[col].forEach(card => container.appendChild(makeCardEl(card, col)));
+        }
+
+        function makeCardEl(card, col) {
+            const el = document.createElement('div');
+            el.className = 'card';
+            el.draggable = true;
+            el.dataset.cardId = card.id;
+            el.dataset.column = col;
+            el.style.borderLeftColor = col === 'done' ? '#c8c4c0' : card.color;
+
+            const checklist = card.checklist || [];
+
+            el.innerHTML = `
+                <div class="card-actions">
+                    <button class="card-btn done-btn"   title="archive" onclick="archiveCard(${card.id},'${col}')">✓</button>
+                    <button class="card-btn delete-btn" title="delete"  onclick="deleteCard(${card.id},'${col}')">✕</button>
+                </div>
+                <div class="card-top">
+                    <button class="priority-btn${card.priority ? ' active' : ''}"
+                        title="toggle priority"
+                        onclick="togglePriority(${card.id},'${col}')">*</button>
+                    <div class="card-title" contenteditable="true"
+                        onblur="updateField(${card.id},'${col}','title',this.innerText)">${esc(card.title)}</div>
+                </div>
+                <div class="card-description" contenteditable="true"
+                    onblur="updateField(${card.id},'${col}','description',this.innerText)">${esc(card.description)}</div>
+                ${checklist.length > 0 ? `
+                <div class="card-checklist">
+                    ${checklist.map(item => `
+                        <div class="checklist-item">
+                            <button class="checklist-check${item.done ? ' checked' : ''}"
+                                onclick="toggleChecklistItem(${card.id},'${col}',${item.id})"></button>
+                            <span class="checklist-text${item.done ? ' done' : ''}"
+                                contenteditable="true"
+                                data-item-id="${item.id}"
+                                onblur="updateChecklistText(${card.id},'${col}',${item.id},this.innerText)"
+                                onkeydown="checklistKeydown(event,${card.id},'${col}',${item.id})">${esc(item.text)}</span>
+                            <button class="checklist-del" onclick="deleteChecklistItem(${card.id},'${col}',${item.id})">×</button>
+                        </div>
+                    `).join('')}
+                </div>` : ''}
+                <button class="add-step-btn" onclick="addChecklistItem(${card.id},'${col}',null)">+ step</button>
+                <div class="card-footer">
+                    <span class="tag ${card.tag}" onclick="cycleTag(${card.id},'${col}')">${card.tag}</span>
+                    <div class="color-picker-wrap">
+                        <button class="color-toggle-btn"
+                            style="background:${card.color}"
+                            onclick="toggleColorPicker(${card.id})"></button>
+                        <div class="color-dropdown" id="color-drop-${card.id}">
+                            ${COLORS.map(c => `
+                                <div class="color-dot${card.color === c ? ' selected' : ''}"
+                                    style="background:${c}"
+                                    onclick="changeColor(${card.id},'${col}','${c}')"></div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            el.addEventListener('dragstart', onDragStart);
+            el.addEventListener('dragend',   onDragEnd);
+            return el;
+        }
+
+        function renderArchive() {
+            const grid  = document.getElementById('archiveGrid');
+            const count = document.getElementById('archiveCount');
+            count.textContent = cards.archived.length ? `(${cards.archived.length})` : '';
+            grid.innerHTML = '';
+            cards.archived.forEach(card => grid.appendChild(makeArchiveEl(card)));
+        }
+
+        function makeArchiveEl(card) {
+            const el = document.createElement('div');
+            el.className = 'archive-card';
+            el.innerHTML = `
+                <div class="archive-card-title">${esc(card.title)}</div>
+                ${card.description ? `<div class="archive-card-desc">${esc(card.description)}</div>` : ''}
+                <div class="archive-card-footer">
+                    <span class="archive-tag">${card.tag}</span>
+                    <div class="archive-actions">
+                        <button class="archive-btn" onclick="restoreCard(${card.id})">restore</button>
+                        <button class="archive-btn" onclick="deleteArchived(${card.id})">delete</button>
+                    </div>
+                </div>
+            `;
+            return el;
+        }
+
+        // ── Card actions ──────────────────────────────────────────────────
+
+        function addCard(col) {
+            const card = { id: Date.now(), title: 'new card', description: '', tag: 'task', color: COLORS[0], priority: false, checklist: [] };
+            cards[col].unshift(card);
+            saveData();
+            renderColumn(col);
+            showToast('card added');
+        }
+
+        function updateField(id, col, field, val) {
+            const card = cards[col].find(c => c.id === id);
+            if (card) { card[field] = val.trim(); saveData(); }
+        }
+
+        function cycleTag(id, col) {
+            const card = cards[col].find(c => c.id === id);
+            if (!card) return;
+            card.tag = TAGS[(TAGS.indexOf(card.tag) + 1) % TAGS.length];
+            saveData(); renderColumn(col);
+        }
+
+        function changeColor(id, col, color) {
+            const card = cards[col].find(c => c.id === id);
+            if (!card) return;
+            card.color = color;
+            saveData(); renderColumn(col);
+        }
+
+        function togglePriority(id, col) {
+            const card = cards[col].find(c => c.id === id);
+            if (!card) return;
+            card.priority = !card.priority;
+            saveData(); renderColumn(col);
+        }
+
+        function archiveCard(id, col) {
+            const idx = cards[col].findIndex(c => c.id === id);
+            if (idx === -1) return;
+            const [card] = cards[col].splice(idx, 1);
+            card.archivedFrom = col;
+            cards.archived.unshift(card);
+            saveData(); renderColumn(col); renderArchive();
+            showToast('archived ✓');
+        }
+
+        function restoreCard(id) {
+            const idx = cards.archived.findIndex(c => c.id === id);
+            if (idx === -1) return;
+            const [card] = cards.archived.splice(idx, 1);
+            const target = card.archivedFrom || 'todo';
+            delete card.archivedFrom;
+            cards[target].unshift(card);
+            saveData(); renderColumn(target); renderArchive();
+            showToast('card restored');
+        }
+
+        function deleteCard(id, col) {
+            showModal('delete this card?', () => {
+                cards[col] = cards[col].filter(c => c.id !== id);
+                saveData(); renderColumn(col); showToast('deleted');
+            });
+        }
+
+        function deleteArchived(id) {
+            showModal('delete permanently?', () => {
+                cards.archived = cards.archived.filter(c => c.id !== id);
+                saveData(); renderArchive(); showToast('deleted');
+            });
+        }
+
+        function clearAllData() {
+            showModal('clear all cards on this board? cannot be undone.', () => {
+                cards.todo = []; cards.inprogress = []; cards.done = []; cards.archived = [];
+                saveData(); renderAll(); showToast('board cleared');
+            });
+        }
+
+        // ── Checklist ─────────────────────────────────────────────────────
+
+        function addChecklistItem(cardId, col, afterId) {
+            const card = cards[col].find(c => c.id === cardId);
+            if (!card) return;
+            if (!card.checklist) card.checklist = [];
+            const newItem = { id: Date.now(), text: '', done: false };
+            if (afterId != null) {
+                const idx = card.checklist.findIndex(i => i.id === afterId);
+                card.checklist.splice(idx + 1, 0, newItem);
+            } else {
+                card.checklist.push(newItem);
+            }
+            saveData();
+            renderColumn(col);
+            setTimeout(() => {
+                const el = document.querySelector(`.checklist-text[data-item-id="${newItem.id}"]`);
+                if (el) el.focus();
+            }, 10);
+        }
+
+        function toggleChecklistItem(cardId, col, itemId) {
+            const card = cards[col].find(c => c.id === cardId);
+            if (!card) return;
+            const item = (card.checklist || []).find(i => i.id === itemId);
+            if (!item) return;
+            item.done = !item.done;
+            saveData(); renderColumn(col);
+        }
+
+        function deleteChecklistItem(cardId, col, itemId) {
+            const card = cards[col].find(c => c.id === cardId);
+            if (!card) return;
+            card.checklist = (card.checklist || []).filter(i => i.id !== itemId);
+            saveData(); renderColumn(col);
+        }
+
+        function updateChecklistText(cardId, col, itemId, text) {
+            const card = cards[col].find(c => c.id === cardId);
+            if (!card) return;
+            const item = (card.checklist || []).find(i => i.id === itemId);
+            if (!item) return;
+            item.text = text.trim();
+            if (!item.text) {
+                card.checklist = card.checklist.filter(i => i.id !== itemId);
+            }
+            saveData(); renderColumn(col);
+        }
+
+        function checklistKeydown(e, cardId, col, itemId) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addChecklistItem(cardId, col, itemId);
+            }
+            if (e.key === 'Backspace' && !e.target.innerText.trim()) {
+                e.preventDefault();
+                deleteChecklistItem(cardId, col, itemId);
+            }
+        }
+
+        // ── Color picker ──────────────────────────────────────────────────
+
+        function toggleColorPicker(id) {
+            const dropdown = document.getElementById(`color-drop-${id}`);
+            const isOpen = dropdown.classList.contains('open');
+            document.querySelectorAll('.color-dropdown').forEach(d => d.classList.remove('open'));
+            if (!isOpen) dropdown.classList.add('open');
+        }
+
+        function setupColorPickerDismiss() {
+            document.addEventListener('click', e => {
+                if (!e.target.closest('.color-picker-wrap')) {
+                    document.querySelectorAll('.color-dropdown').forEach(d => d.classList.remove('open'));
+                }
+                if (!e.target.closest('.dp-mood-wrap')) {
+                    const dd = document.getElementById('dpMoodDropdown');
+                    if (dd) { dd.classList.remove('open'); moodDropdownOpen = false; }
+                }
+            });
+        }
+
+        // ── Archive toggle ────────────────────────────────────────────────
+
+        function toggleArchive() {
+            archiveOpen = !archiveOpen;
+            document.getElementById('archiveToggle').classList.toggle('open', archiveOpen);
+            document.getElementById('archiveGrid').classList.toggle('open', archiveOpen);
+        }
+
+        // ── Search ────────────────────────────────────────────────────────
+
+        function openSearch() {
+            document.getElementById('searchOverlay').classList.add('show');
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            document.getElementById('searchResults').innerHTML = '';
+            setTimeout(() => input.focus(), 40);
+        }
+
+        function closeSearch() {
+            document.getElementById('searchOverlay').classList.remove('show');
+        }
+
+        function handleSearchOverlayClick(e) {
+            if (e.target === document.getElementById('searchOverlay')) closeSearch();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('searchInput').addEventListener('input', e => {
+                performSearch(e.target.value);
+            });
+        });
+
+        function performSearch(query) {
+            const container = document.getElementById('searchResults');
+            if (!query.trim()) { container.innerHTML = ''; return; }
+            const q = query.toLowerCase();
+            const results = [];
+
+            boards.forEach(board => {
+                COLS.forEach(col => {
+                    board.cards[col].forEach(card => {
+                        const inTitle = card.title.toLowerCase().includes(q);
+                        const inDesc  = (card.description || '').toLowerCase().includes(q);
+                        const inSteps = (card.checklist || []).some(i => i.text.toLowerCase().includes(q));
+                        if (inTitle || inDesc || inSteps) results.push({ card, col, board });
+                    });
+                });
+                board.cards.archived.forEach(card => {
+                    if (card.title.toLowerCase().includes(q) || (card.description || '').toLowerCase().includes(q)) {
+                        results.push({ card, col: 'archived', board });
+                    }
+                });
+            });
+
+            if (!results.length) {
+                container.innerHTML = '<div class="search-empty">no results</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(r => `
+                <div class="search-result" onclick="goToResult('${r.board.id}','${r.col}',${r.card.id})">
+                    <div class="search-result-title">${highlightMatch(r.card.title, query)}</div>
+                    <div class="search-result-meta">
+                        ${boards.length > 1 ? `<span class="search-meta-board">${esc(r.board.name)}</span>` : ''}
+                        <span>${r.col === 'inprogress' ? 'in progress' : r.col}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function highlightMatch(rawText, query) {
+            const idx = rawText.toLowerCase().indexOf(query.toLowerCase());
+            if (idx === -1) return esc(rawText);
+            return esc(rawText.slice(0, idx))
+                 + `<mark>${esc(rawText.slice(idx, idx + query.length))}</mark>`
+                 + esc(rawText.slice(idx + query.length));
+        }
+
+        function goToResult(boardId, col, cardId) {
+            closeSearch();
+            if (boardId !== activeBoardId) switchBoard(boardId);
+            if (col === 'archived') {
+                if (!archiveOpen) toggleArchive();
+            }
+            setTimeout(() => {
+                const el = document.querySelector(`[data-card-id="${cardId}"]`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.classList.add('highlight');
+                    setTimeout(() => el.classList.remove('highlight'), 1400);
+                }
+            }, 80);
+        }
+
+        // ── Keyboard shortcuts ────────────────────────────────────────────
+
+        function setupKeyboard() {
+            document.addEventListener('keydown', e => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    document.getElementById('searchOverlay').classList.contains('show')
+                        ? closeSearch() : openSearch();
+                }
+                if (e.key === 'Escape') {
+                    closeSearch();
+                    closeModal();
+                }
+            });
+        }
+
+        // ── Drag & drop ───────────────────────────────────────────────────
+
+        function setupDropZones() {
+            document.querySelectorAll('.cards-container').forEach(container => {
+                container.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    const dragging = document.querySelector('.dragging');
+                    if (!dragging) return;
+                    const after = dragAfterElement(container, e.clientY);
+                    if (!after) container.appendChild(dragging);
+                    else container.insertBefore(dragging, after);
+                });
+
+                container.addEventListener('drop', e => {
+                    e.preventDefault();
+                    if (!draggedCard) return;
+                    const toCol = container.id.replace('-cards', '');
+                    const card  = cards[draggedCard.fromCol].find(c => c.id === draggedCard.id);
+                    if (!card) return;
+
+                    cards[draggedCard.fromCol] = cards[draggedCard.fromCol].filter(c => c.id !== draggedCard.id);
+
+                    const after = dragAfterElement(container, e.clientY);
+                    if (!after) {
+                        cards[toCol].push(card);
+                    } else {
+                        const afterIdx = cards[toCol].findIndex(c => c.id === parseInt(after.dataset.cardId));
+                        cards[toCol].splice(afterIdx, 0, card);
+                    }
+
+                    draggedCard = null;
+                    saveData(); renderAll();
+                });
+            });
+        }
+
+        function onDragStart(e) {
+            draggedCard = { id: parseInt(e.currentTarget.dataset.cardId), fromCol: e.currentTarget.dataset.column };
+            e.currentTarget.classList.add('dragging');
+        }
+
+        function onDragEnd(e) { e.currentTarget.classList.remove('dragging'); }
+
+        function dragAfterElement(container, y) {
+            const els = [...container.querySelectorAll('.card:not(.dragging)')];
+            return els.reduce((closest, el) => {
+                const box    = el.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                return offset < 0 && offset > closest.offset ? { offset, element: el } : closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // ── Storage ───────────────────────────────────────────────────────
+
+        function saveData() {
+            localStorage.setItem('kanban_v2', JSON.stringify({ activeBoardId, boards }));
+        }
+
+        function loadData() {
+            try {
+                const raw = localStorage.getItem('kanban_v2');
+                if (raw) {
+                    const data   = JSON.parse(raw);
+                    boards       = data.boards || [];
+                    activeBoardId = data.activeBoardId;
+                } else {
+                    // migrate from previous version
+                    const oldRaw = localStorage.getItem('kanban') || localStorage.getItem('kanbanCards');
+                    const oldCards = oldRaw ? JSON.parse(oldRaw) : null;
+                    const defaultCards = {
+                        todo:       oldCards?.todo       || [],
+                        inprogress: oldCards?.inprogress || [],
+                        done:       oldCards?.done       || [],
+                        archived:   oldCards?.archived   || [],
+                    };
+                    boards       = [{ id: 'b' + Date.now(), name: 'personal', cards: defaultCards }];
+                    activeBoardId = boards[0].id;
+                }
+
+                // ensure active board exists
+                if (!boards.find(b => b.id === activeBoardId)) activeBoardId = boards[0]?.id;
+
+                // set cards reference
+                cards = boards.find(b => b.id === activeBoardId)?.cards;
+
+                // ensure all keys exist on every board
+                boards.forEach(b => {
+                    b.cards.todo       = b.cards.todo       || [];
+                    b.cards.inprogress = b.cards.inprogress || [];
+                    b.cards.done       = b.cards.done       || [];
+                    b.cards.archived   = b.cards.archived   || [];
+                    // ensure each card has checklist array
+                    [...b.cards.todo, ...b.cards.inprogress, ...b.cards.done, ...b.cards.archived]
+                        .forEach(c => { if (!c.checklist) c.checklist = []; });
+                });
+
+            } catch (e) {
+                const newBoard = { id: 'b' + Date.now(), name: 'personal', cards: { todo:[], inprogress:[], done:[], archived:[] } };
+                boards = [newBoard];
+                activeBoardId = newBoard.id;
+                cards = newBoard.cards;
+            }
+        }
+
+        // ── UI helpers ────────────────────────────────────────────────────
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function showModal(msg, cb) {
+            document.getElementById('modalMessage').textContent = msg;
+            document.getElementById('confirmModal').classList.add('show');
+            confirmCallback = cb;
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+            confirmCallback = null;
+        }
+
+        function confirmAction() { if (confirmCallback) confirmCallback(); closeModal(); }
+
+        function esc(str) {
+            return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        // ── Daily panel ───────────────────────────────────────────────────
+
+        const MOODS = ['🤩','😊','😌','🤔','😤','😔','🥱','😰'];
+        const MOOD_LABELS = { '🤩':'amazing', '😊':'good', '😌':'calm', '🤔':'unsure', '😤':'frustrated', '😔':'low', '🥱':'tired', '😰':'anxious' };
+        const MOOD_SCORES = { '🤩':2, '😊':1.5, '😌':1, '🤔':0, '😤':-0.5, '😔':-1, '🥱':-0.5, '😰':-1.5 };
+        const POS_WORDS = ['good','great','amazing','wonderful','happy','love','grateful','blessed','thankful','excited','joy','peaceful','calm','proud','inspired','motivated','content','awesome','fantastic','lucky','energized'];
+        const NEG_WORDS = ['bad','terrible','sad','stressed','tired','anxious','worried','afraid','angry','frustrated','exhausted','overwhelmed','depressed','lonely','sick','hard','difficult','fail','missed','lost','empty'];
+        let moodDropdownOpen = false;
+        let feelCalYear = new Date().getFullYear();
+        let feelCalMonth = new Date().getMonth();
+        let editingTrendKey = null;
+
+        let daily = { today: null, history: [] };
+
+        function getTodayKey() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function getTodayDisplay() {
+            return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+
+        function freshDay(key) {
+            return { key: key || getTodayKey(), frog: '', tasks: [], gratefuls: ['','',''], mood: null };
+        }
+
+        function loadDailyData() {
+            try {
+                const raw = localStorage.getItem('kanban_daily');
+                if (raw) {
+                    daily = JSON.parse(raw);
+                    if (!daily.history) daily.history = [];
+                } else {
+                    daily = { today: freshDay(), history: [] };
+                }
+                const todayKey = getTodayKey();
+                if (daily.today.key !== todayKey) {
+                    // archive the previous day if it had any content
+                    const prev = daily.today;
+                    const hadContent = prev.tasks.length || prev.frog || prev.gratefuls.some(g => g) || prev.mood;
+                    if (hadContent) {
+                        daily.history.unshift(prev);
+                        if (daily.history.length > 60) daily.history = daily.history.slice(0, 60);
+                    }
+                    daily.today = freshDay(todayKey);
+                    daily._archivedYesterday = hadContent;
+                    saveDailyData();
+                }
+            } catch (e) {
+                daily = { today: freshDay(), history: [] };
+            }
+        }
+
+        function saveDailyData() {
+            const save = { today: daily.today, history: daily.history };
+            localStorage.setItem('kanban_daily', JSON.stringify(save));
+        }
+
+        function updateDailyTrigger() {
+            const btn = document.getElementById('dpTrigger');
+            const hasContent = daily.today.tasks.length > 0 || daily.today.frog;
+            btn.classList.toggle('has-content', hasContent);
+        }
+
+        function toggleDailyPanel() {
+            const panel = document.getElementById('dpPanel');
+            const opening = !panel.classList.contains('open');
+            if (opening) {
+                renderDailyPanel();
+                panel.classList.add('open');
+            } else {
+                panel.classList.remove('open');
+            }
+        }
+
+        function renderDailyPanel() {
+            document.getElementById('dpDate').textContent = getTodayDisplay();
+
+            // frog
+            const frogEl = document.getElementById('dpFrog');
+            frogEl.textContent = daily.today.frog || '';
+
+            // tasks
+            renderDailyTasks();
+
+            // gratefuls
+            for (let i = 0; i < 3; i++) {
+                document.getElementById(`dpGrateful${i}`).value = daily.today.gratefuls[i] || '';
+            }
+
+            // mood
+            renderMoodTrigger();
+        }
+
+        function renderDailyTasks() {
+            const container = document.getElementById('dpTaskList');
+            const tasks = daily.today.tasks;
+            container.innerHTML = tasks.map(t => `
+                <div class="dp-task${t.done ? ' done' : ''}">
+                    <button class="dp-task-check${t.done ? ' checked' : ''}"
+                        onclick="toggleDailyTask(${t.id})"></button>
+                    <span class="dp-task-text" contenteditable="true"
+                        data-dtid="${t.id}"
+                        onblur="updateDailyTaskText(${t.id}, this.innerText)"
+                        onkeydown="dailyTaskKeydown(event, ${t.id})">${esc(t.text)}</span>
+                    <button class="dp-task-del" onclick="deleteDailyTask(${t.id})">×</button>
+                </div>
+            `).join('');
+        }
+
+        function renderMoodTrigger() {
+            const mood = daily.today.mood;
+            const trigger = document.getElementById('dpMoodTrigger');
+            const emojiEl = document.getElementById('dpMoodTriggerEmoji');
+            const labelEl = document.getElementById('dpMoodTriggerLabel');
+            if (!trigger) return;
+            if (mood) {
+                emojiEl.textContent = mood;
+                labelEl.textContent = MOOD_LABELS[mood] || mood;
+                trigger.classList.add('has-mood');
+            } else {
+                emojiEl.textContent = '';
+                labelEl.textContent = 'how are you feeling?';
+                trigger.classList.remove('has-mood');
+            }
+        }
+
+        function toggleMoodDropdown() {
+            const dropdown = document.getElementById('dpMoodDropdown');
+            if (!dropdown) return;
+            moodDropdownOpen = !moodDropdownOpen;
+            if (moodDropdownOpen) {
+                dropdown.innerHTML = MOODS.map(m => `
+                    <div class="dp-mood-option${daily.today.mood === m ? ' selected' : ''}"
+                        onclick="selectMood('${m}')">
+                        <span class="dp-mood-option-emoji">${m}</span>
+                        <span>${MOOD_LABELS[m] || m}</span>
+                    </div>
+                `).join('');
+                dropdown.classList.add('open');
+            } else {
+                dropdown.classList.remove('open');
+            }
+        }
+
+        // daily task actions
+        function addDailyTask() {
+            const task = { id: Date.now(), text: '', done: false };
+            daily.today.tasks.push(task);
+            saveDailyData();
+            renderDailyTasks();
+            updateDailyTrigger();
+            setTimeout(() => {
+                const el = document.querySelector(`[data-dtid="${task.id}"]`);
+                if (el) el.focus();
+            }, 10);
+        }
+
+        function toggleDailyTask(id) {
+            const task = daily.today.tasks.find(t => t.id === id);
+            if (!task) return;
+            task.done = !task.done;
+            saveDailyData();
+            renderDailyTasks();
+        }
+
+        function deleteDailyTask(id) {
+            daily.today.tasks = daily.today.tasks.filter(t => t.id !== id);
+            saveDailyData();
+            renderDailyTasks();
+            updateDailyTrigger();
+        }
+
+        function updateDailyTaskText(id, text) {
+            const task = daily.today.tasks.find(t => t.id === id);
+            if (!task) return;
+            task.text = text.trim();
+            if (!task.text) {
+                daily.today.tasks = daily.today.tasks.filter(t => t.id !== id);
+                renderDailyTasks();
+            }
+            saveDailyData();
+            updateDailyTrigger();
+        }
+
+        function dailyTaskKeydown(e, id) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addDailyTask();
+            }
+            if (e.key === 'Backspace' && !e.target.innerText.trim()) {
+                e.preventDefault();
+                deleteDailyTask(id);
+            }
+        }
+
+        function saveFrog(text) {
+            daily.today.frog = text.trim();
+            saveDailyData();
+            updateDailyTrigger();
+        }
+
+        function saveGrateful(idx, value) {
+            daily.today.gratefuls[idx] = value;
+            saveDailyData();
+        }
+
+        function selectMood(emoji) {
+            daily.today.mood = daily.today.mood === emoji ? null : emoji;
+            saveDailyData();
+            moodDropdownOpen = false;
+            const dd = document.getElementById('dpMoodDropdown');
+            if (dd) dd.classList.remove('open');
+            renderMoodTrigger();
+        }
+
+        // ── CSV Export / Import ────────────────────────────────────────────
+
+        function csvCell(val) {
+            const s = String(val ?? '');
+            return (s.includes(',') || s.includes('\n') || s.includes('"'))
+                ? '"' + s.replace(/"/g, '""') + '"'
+                : s;
+        }
+
+        function buildCSV(rows) {
+            return rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportCardsCSV() {
+            const COL_LABELS = { todo: 'To Do', inprogress: 'In Progress', done: 'Done', archived: 'Archived' };
+            const rows = [['Board', 'Column', 'Title', 'Description', 'Tag', 'Priority', 'Checklist']];
+            boards.forEach(board => {
+                ['todo', 'inprogress', 'done', 'archived'].forEach(col => {
+                    (board.cards[col] || []).forEach(card => {
+                        const checklist = (card.checklist || [])
+                            .map(i => (i.done ? '[x] ' : '[ ] ') + i.text).join(' | ');
+                        rows.push([board.name, COL_LABELS[col], card.title,
+                            card.description, card.tag,
+                            card.priority ? 'yes' : 'no', checklist]);
+                    });
+                });
+            });
+            downloadCSV(buildCSV(rows), 'kanban-cards.csv');
+            showToast('cards exported ✓');
+        }
+
+        function exportDailyCSV() {
+            const rows = [['Date', 'Mood', 'Frog', 'Grateful 1', 'Grateful 2', 'Grateful 3', 'Tasks Done', 'Tasks Pending']];
+            [daily.today, ...daily.history].forEach(day => {
+                if (!day?.key) return;
+                const done    = (day.tasks || []).filter(t =>  t.done).map(t => t.text).join(' | ');
+                const pending = (day.tasks || []).filter(t => !t.done).map(t => t.text).join(' | ');
+                rows.push([day.key, day.mood || '', day.frog || '',
+                    day.gratefuls?.[0] || '', day.gratefuls?.[1] || '', day.gratefuls?.[2] || '',
+                    done, pending]);
+            });
+            downloadCSV(buildCSV(rows), 'daily-log.csv');
+            showToast('daily log exported ✓');
+        }
+
+        function parseCSV(text) {
+            const rows = []; let row = [], cell = '', inQ = false;
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i], nx = text[i + 1];
+                if (inQ) {
+                    if (ch === '"' && nx === '"') { cell += '"'; i++; }
+                    else if (ch === '"') { inQ = false; }
+                    else { cell += ch; }
+                } else {
+                    if (ch === '"') { inQ = true; }
+                    else if (ch === ',') { row.push(cell); cell = ''; }
+                    else if (ch === '\n' || (ch === '\r' && nx === '\n')) {
+                        if (ch === '\r') i++;
+                        row.push(cell); cell = '';
+                        if (row.some(c => c !== '')) rows.push(row);
+                        row = [];
+                    } else { cell += ch; }
+                }
+            }
+            if (cell || row.length) { row.push(cell); if (row.some(c => c)) rows.push(row); }
+            return rows;
+        }
+
+        function importCardsCSV(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const rows = parseCSV(e.target.result.replace(/^\uFEFF/, ''));
+                    if (rows.length < 2) return showToast('file appears empty');
+                    const h    = rows[0].map(s => s.toLowerCase().trim());
+                    const col  = k => h.indexOf(k);
+                    const iBoard = col('board'), iCol = col('column'), iTitle = col('title'),
+                          iDesc  = col('description'), iTag = col('tag'),
+                          iPrio  = col('priority'), iCheck = col('checklist');
+                    if (iTitle === -1) return showToast('missing Title column');
+                    const COL_MAP = { 'to do':'todo', 'todo':'todo', 'in progress':'inprogress',
+                                      'inprogress':'inprogress', 'done':'done', 'archived':'archived' };
+                    let added = 0;
+                    rows.slice(1).forEach(r => {
+                        const title = r[iTitle]?.trim();
+                        if (!title) return;
+                        const boardName = r[iBoard]?.trim() || boards.find(b => b.id === activeBoardId)?.name || 'imported';
+                        let board = boards.find(b => b.name.toLowerCase() === boardName.toLowerCase());
+                        if (!board) {
+                            board = { id: 'b' + Date.now() + Math.floor(Math.random()*9999),
+                                      name: boardName,
+                                      cards: { todo:[], inprogress:[], done:[], archived:[] } };
+                            boards.push(board);
+                        }
+                        const colKey = COL_MAP[(r[iCol] || '').toLowerCase().trim()] || 'todo';
+                        const checklistRaw = r[iCheck] || '';
+                        const checklist = checklistRaw
+                            ? checklistRaw.split('|').map(s => {
+                                const t = s.trim();
+                                return { id: Date.now() + Math.random(),
+                                         text: t.replace(/^\[.\]\s*/, '').trim(),
+                                         done: t.startsWith('[x]') };
+                              }).filter(i => i.text)
+                            : [];
+                        const tag = TAGS.includes((r[iTag] || '').toLowerCase()) ? r[iTag].toLowerCase() : TAGS[0];
+                        board.cards[colKey].push({
+                            id: Date.now() + Math.random(), title,
+                            description: r[iDesc]?.trim() || '',
+                            tag, color: COLORS[0],
+                            priority: (r[iPrio] || '').toLowerCase() === 'yes',
+                            checklist
+                        });
+                        added++;
+                    });
+                    saveData(); renderBoardTabs(); renderAll();
+                    showToast(`imported ${added} card${added !== 1 ? 's' : ''} ✓`);
+                } catch (err) {
+                    showToast('import failed — check file format');
+                }
+            };
+            reader.readAsText(file, 'utf-8');
+        }
+
+        // ── Title ─────────────────────────────────────────────────────────
+
+        function loadTitle() {
+            const saved = localStorage.getItem('kanban_title');
+            if (saved !== null) document.getElementById('siteTitle').textContent = saved;
+        }
+
+        function saveTitle(text) {
+            localStorage.setItem('kanban_title', text.trim());
+        }
+
+        // ── Feeling Log ────────────────────────────────────────────────────
+
+        function getDayData(key) {
+            if (daily.today.key === key) return daily.today;
+            return daily.history.find(h => h.key === key) || null;
+        }
+
+        function getDayScore(dayData) {
+            if (!dayData) return null;
+            const moodScore = dayData.mood ? (MOOD_SCORES[dayData.mood] ?? null) : null;
+            const text = (dayData.gratefuls || []).join(' ').toLowerCase();
+            let sentScore = 0, words = 0;
+            text.split(/\W+/).forEach(w => {
+                if (POS_WORDS.includes(w)) { sentScore += 1; words++; }
+                else if (NEG_WORDS.includes(w)) { sentScore -= 1; words++; }
+            });
+            const normSent = words > 0 ? (sentScore / words) * 2 : null;
+            if (moodScore !== null && normSent !== null) return moodScore * 0.6 + normSent * 0.4;
+            if (moodScore !== null) return moodScore;
+            if (normSent !== null) return normSent;
+            return null;
+        }
+
+        function scoreToColor(score) {
+            if (score === null) return 'rgba(0,0,0,0.04)';
+            if (score > 1.2)  return 'rgba(80,180,80,0.22)';
+            if (score > 0.3)  return 'rgba(160,200,80,0.18)';
+            if (score > -0.3) return 'rgba(210,190,60,0.18)';
+            if (score > -1)   return 'rgba(220,140,60,0.2)';
+            return 'rgba(200,80,80,0.18)';
+        }
+
+        function openFeelLog() {
+            feelCalYear = new Date().getFullYear();
+            feelCalMonth = new Date().getMonth();
+            renderFeelLog();
+            document.getElementById('feelOverlay').classList.add('open');
+        }
+
+        function closeFeelLog() {
+            document.getElementById('feelOverlay').classList.remove('open');
+        }
+
+        function handleFeelOverlayClick(e) {
+            if (e.target === document.getElementById('feelOverlay')) closeFeelLog();
+        }
+
+        function openTrendEdit(key) {
+            editingTrendKey = editingTrendKey === key ? null : key;
+            renderTrend();
+        }
+
+        function setHistoryMood(key, emoji) {
+            if (key === getTodayKey()) {
+                daily.today.mood = daily.today.mood === emoji ? null : emoji;
+            } else {
+                let entry = daily.history.find(h => h.key === key);
+                if (!entry) {
+                    entry = freshDay(key);
+                    entry.mood = emoji;
+                    daily.history.push(entry);
+                    daily.history.sort((a, b) => b.key.localeCompare(a.key));
+                    if (daily.history.length > 60) daily.history = daily.history.slice(0, 60);
+                } else {
+                    entry.mood = entry.mood === emoji ? null : emoji;
+                }
+            }
+            saveDailyData();
+            editingTrendKey = null;
+            renderFeelLog();
+            renderMoodTrigger();
+        }
+
+        function shiftCalMonth(dir) {
+            feelCalMonth += dir;
+            if (feelCalMonth > 11) { feelCalMonth = 0; feelCalYear++; }
+            if (feelCalMonth < 0)  { feelCalMonth = 11; feelCalYear--; }
+            renderCalendar();
+        }
+
+        function renderFeelLog() {
+            renderTrend();
+            renderCalendar();
+        }
+
+        function renderTrend() {
+            const DAYS_SHORT = ['su','mo','tu','we','th','fr','sa'];
+            const DAYS_FULL  = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+            const days = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                days.push({ key: d.toISOString().slice(0,10), dow: d.getDay() });
+            }
+            const scores = days.map(({ key }) => getDayScore(getDayData(key)));
+            document.getElementById('feelTrendDays').innerHTML = days.map(({ key, dow }, idx) => {
+                const data = getDayData(key);
+                const score = scores[idx];
+                const emoji = data?.mood || '';
+                const pct = score !== null ? Math.round((score + 2) / 4 * 100) : 0;
+                const isEditing = editingTrendKey === key;
+                return `<div class="feel-trend-day${isEditing ? ' editing' : ''}" onclick="openTrendEdit('${key}')">
+                    <div class="feel-trend-label">${DAYS_SHORT[dow]}</div>
+                    <div class="feel-trend-emoji">${emoji || '·'}</div>
+                    <div class="feel-trend-bar-wrap">
+                        <div class="feel-trend-bar" style="height:${score !== null ? pct : 0}%;background:${scoreToColor(score)}"></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // inline mood editor
+            const editRow = document.getElementById('feelTrendEditRow');
+            if (editingTrendKey !== null) {
+                const editingDay = days.find(d => d.key === editingTrendKey);
+                const editData = getDayData(editingTrendKey);
+                const dayName = editingDay ? DAYS_FULL[editingDay.dow] : editingTrendKey;
+                editRow.innerHTML = `<div class="feel-trend-edit-label">${dayName}</div>
+                    <div class="feel-trend-edit-moods">${MOODS.map(m =>
+                        `<button class="feel-trend-edit-opt${editData?.mood === m ? ' sel' : ''}"
+                            onclick="setHistoryMood('${editingTrendKey}','${m}')">${m}</button>`
+                    ).join('')}</div>`;
+            } else {
+                editRow.innerHTML = '';
+            }
+
+            const valid = scores.filter(s => s !== null);
+            let vibeText = 'tap a day to edit · no entries yet';
+            if (valid.length > 0) {
+                const avg = valid.reduce((a,b) => a+b, 0) / valid.length;
+                if (avg > 1.2)  vibeText = 'you had a wonderful week ✨';
+                else if (avg > 0.3)  vibeText = 'solid week overall 👍';
+                else if (avg > -0.3) vibeText = 'a balanced, mixed week';
+                else if (avg > -1)   vibeText = 'a challenging week — be gentle with yourself';
+                else                 vibeText = 'rough stretch — things will shift 💙';
+            }
+            document.getElementById('feelVibe').textContent = vibeText;
+        }
+
+        function renderCalendar() {
+            const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+            const DOWS   = ['su','mo','tu','we','th','fr','sa'];
+            document.getElementById('feelCalMonth').textContent = `${MONTHS[feelCalMonth]} ${feelCalYear}`;
+            const firstDay    = new Date(feelCalYear, feelCalMonth, 1).getDay();
+            const daysInMonth = new Date(feelCalYear, feelCalMonth + 1, 0).getDate();
+            const todayKey    = getTodayKey();
+            let html = DOWS.map(d => `<div class="feel-cal-dow">${d}</div>`).join('');
+            for (let i = 0; i < firstDay; i++) html += `<div class="feel-cal-cell"></div>`;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const key  = `${feelCalYear}-${String(feelCalMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const data = getDayData(key);
+                const score = getDayScore(data);
+                const emoji = data?.mood || '';
+                html += `<div class="feel-cal-cell${key === todayKey ? ' today-cell' : ''}" style="background:${scoreToColor(score)}">
+                    <span class="feel-cal-day-num">${day}</span>
+                    ${emoji ? `<span class="feel-cal-emoji">${emoji}</span>` : ''}
+                </div>`;
+            }
+            document.getElementById('feelCalGrid').innerHTML = html;
+        }
+
+        // ── PWA ───────────────────────────────────────────────────────────
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+            });
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
