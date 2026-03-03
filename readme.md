@@ -1,277 +1,96 @@
-# 📚 Student Kanban Board (PWA Edition)
+# Kanban
 
-A playful, ultra-lightweight kanban board sticky note tool designed for students. Features a fun hand-drawn aesthetic with crayon-style borders and paper texture background. **Now installable as a Progressive Web App!**
+A minimal, playful kanban board for staying organized. Built as a single-file PWA — works in the browser, installs to your home screen, and runs fully offline.
 
-## ✨ Features
-
-### Core Functionality
-- **Three Column System**: TODO, IN PROGRESS, and DONE
-- **Drag & Drop**: Smoothly move cards between columns and reorder within columns
-- **Editable Cards**: Click to edit titles and descriptions inline
-- **Tag System**: Categorize cards as Homework, Project, or Task
-- **Color Customization**: Choose from 5 sticky note colors per card
-- **Sort Options**: Reorder cards using arrow buttons or drag-and-drop
-- **Delete with Confirmation**: Safely remove cards with confirmation dialog
-
-### 📱 PWA Features (NEW!)
-- **Install to Home Screen**: Works like a native app on mobile and desktop
-- **Offline Mode**: Use without internet connection
-- **App Icon**: Appears on your device like any other app
-- **Standalone Mode**: Opens without browser UI for distraction-free use
-- **Auto-Update**: Service worker keeps app updated
-- **Fast Loading**: Cached for instant startup
-
-### Data Management
-- **Auto-Save**: All changes automatically saved to browser storage
-- **Export Data**: Download your cards as JSON backup
-- **Import Data**: Restore cards from exported JSON file
-- **Offline First**: Works completely offline, no internet required
-- **Sample Data**: Loads with example cards on first use
-
-### Design
-- **Playful Aesthetic**: Hand-drawn crayon borders and Comic Sans font
-- **Paper Texture**: Realistic notebook-style background
-- **Responsive**: Works on desktop, tablet, and mobile
-- **Smooth Animations**: Satisfying drag-and-drop feedback
-- **Toast Notifications**: Friendly confirmation messages
-
-## 🚀 Quick Start
-
-### Option 1: Install as PWA (Recommended!) 📱
-
-1. **Visit the live site** (after deploying to GitHub Pages)
-2. **Look for the install prompt** or click the "📱 Install App" button
-3. **Click "Install"** when prompted
-4. **Done!** The app appears on your home screen/desktop
-
-**Mobile (iOS):**
-- Safari → Share button → "Add to Home Screen"
-
-**Mobile (Android):**
-- Chrome → Menu → "Install app" or "Add to Home Screen"
-
-**Desktop (Chrome/Edge):**
-- Look for install icon in address bar
-- Or click "📱 Install App" button in the controls
-
-### Option 2: Open Locally
-1. Download all files: `index.html`, `manifest.json`, `service-worker.js`, icons
-2. Double-click `index.html` to open in your browser
-3. Start organizing! (PWA features work best when served via HTTPS)
-
-### Option 3: Deploy to GitHub Pages
-
-1. **Create a new GitHub repository**
-   - Go to github.com and click "New repository"
-   - Name it (e.g., "student-kanban-pwa")
-   - Make it public
-   - Don't initialize with README (we have our own)
-
-2. **Upload files**
-   - Click "uploading an existing file"
-   - Drag and drop ALL files:
-     - `index.html`
-     - `manifest.json`
-     - `service-worker.js`
-     - `README.md`
-     - `.gitignore`
-     - `icon-192.png` (you need to create this - see ICONS.md)
-     - `icon-512.png` (you need to create this - see ICONS.md)
-   - Commit the files
-
-3. **Enable GitHub Pages**
-   - Go to repository Settings
-   - Scroll to "Pages" section
-   - Under "Source", select "main" branch
-   - Click Save
-   - Your app will be live at: `https://yourusername.github.io/student-kanban-pwa/`
-
-4. **Test PWA Installation**
-   - Visit your live URL
-   - Click the "📱 Install App" button
-   - Enjoy your installed app!
-
-## 🎨 Creating Icons
-
-You need two icon files for the PWA to work:
-- `icon-192.png` (192x192 pixels)
-- `icon-512.png` (512x512 pixels)
-
-**Quick options:**
-1. Use https://www.pwabuilder.com/imageGenerator (auto-generates all sizes)
-2. Use https://favicon.io/favicon-generator/ (create text-based icons)
-3. Create a simple square with 📚 emoji on #f4e4c1 background
-4. See `ICONS.md` for detailed instructions
-
-## 📖 How to Use
-
-### Creating Cards
-- Click the "+ Add Card" button at the top of any column
-- Click on the title or description to edit
-- Cards auto-save as you type
-
-### Moving Cards
-- **Drag & Drop**: Click and drag cards between columns
-- **Arrow Buttons**: Use ↑↓ buttons to reorder within a column
-- Cards automatically save their new position
-
-### Customizing Cards
-- **Change Tag**: Click the tag button to cycle through Homework → Project → Task
-- **Change Color**: Click any color circle at the bottom of the card
-- **Delete**: Click the 🗑️ button (you'll be asked to confirm)
-
-### Managing Data
-- **Export**: Click "💾 Export Data" to download a backup JSON file
-- **Import**: Click "📂 Import Data" to restore from a backup
-- **Clear All**: Click "🗑️ Clear All" to start fresh (with confirmation)
-
-### Installing the App
-- **Install Button**: Click "📱 Install App" in the controls
-- **Install Prompt**: A prompt may appear automatically after 3 seconds
-- **Manual Install**: Use browser menu → "Install [app name]"
-
-## 📱 Mobile Support
-
-The app is fully responsive and mobile-optimized:
-- Columns stack vertically on mobile
-- Touch-friendly drag and drop
-- Large tap targets for buttons
-- Installable on iOS and Android
-- Works offline after installation
-
-## 🔒 Privacy & Data
-
-- **100% Local**: All data stored in your browser's localStorage
-- **No Tracking**: No analytics, cookies, or external requests
-- **No Account Required**: Use immediately, no sign-up
-- **Export Anytime**: Your data is always portable
-- **Offline First**: Works without internet after first load
-
-## 🛠️ Technical Details
-
-### Files Included
-- `index.html` - Main application (single file with embedded CSS/JS)
-- `manifest.json` - PWA configuration
-- `service-worker.js` - Offline caching and PWA functionality
-- `README.md` - This file
-- `.gitignore` - Git ignore rules
-- `icon-192.png` - App icon (192x192) - **You need to create**
-- `icon-512.png` - App icon (512x512) - **You need to create**
-
-### Browser Support
-- ✅ Chrome/Edge (full PWA support)
-- ✅ Firefox (full PWA support)
-- ✅ Safari (iOS 11.3+, limited PWA features)
-- ✅ Samsung Internet
-- ✅ Opera
-
-### PWA Features
-- **Service Worker**: Caches app for offline use
-- **Web App Manifest**: Defines app name, icons, colors
-- **Installable**: Can be added to home screen
-- **Standalone**: Runs in its own window
-- **Responsive**: Adapts to any screen size
-
-## 🐛 Troubleshooting
-
-**Install button not appearing?**
-- Make sure you're on HTTPS (GitHub Pages provides this)
-- Try a different browser (Chrome works best)
-- Check if app is already installed
-- Clear browser cache and reload
-
-**Cards disappeared?**
-- Data is stored per browser. If you cleared browser data, cards are lost
-- Always export backups regularly!
-- Check if you're in the same browser/profile
-
-**Drag and drop not working?**
-- Make sure you're clicking and holding on the card
-- Try using the arrow buttons instead
-- Check if browser permissions are blocking drag events
-
-**App not working offline?**
-- Visit the app once while online to cache it
-- Check if service worker is registered (F12 → Application tab → Service Workers)
-- Try reinstalling the app
-
-**Import not working?**
-- Make sure you're importing a valid JSON file exported from this app
-- File must have the correct structure with `todo`, `inprogress`, and `done` arrays
-
-## 🎓 Perfect For Students
-
-- Track homework assignments
-- Manage group projects
-- Organize study tasks
-- Plan exam preparation
-- Visualize progress
-- Use offline during class
-
-## 🎨 Customization
-
-### Changing Colors
-Edit the `colors` array in the JavaScript section:
-```javascript
-const colors = ['#ffd54f', '#ffb3ba', '#bae1ff', '#baffc9', '#ffdfba'];
-```
-
-### Changing Tag Names
-Find the `cycleTag` function and modify:
-```javascript
-const tags = ['task', 'homework', 'project']; // Add or change tags here
-```
-
-### Adjusting Styles
-All CSS is embedded in the `<style>` section. Search for specific elements:
-- Background: Search for `body { background:`
-- Font: Search for `font-family:`
-- Card colors: Search for `.card {`
-
-### Modifying PWA Settings
-Edit `manifest.json`:
-- Change `name` and `short_name`
-- Update `theme_color` and `background_color`
-- Modify `display` mode (standalone, fullscreen, minimal-ui)
-
-## 📄 License
-
-Free to use and modify! Share with your classmates.
-
-## 🤝 Contributing
-
-This is a single-file PWA designed for easy sharing. Feel free to:
-- Fork and customize
-- Share with friends
-- Modify for your needs
-- Create your own version
-- Add new features
-
-## 💡 Tips
-
-1. **Install It**: The app works best when installed - faster and works offline!
-2. **Use Tags Wisely**: Color-code by tag to see what needs attention
-3. **Regular Exports**: Backup weekly, especially before exams
-4. **Keep it Simple**: Don't overload with too many cards
-5. **Archive Done Items**: Periodically export and clear completed work
-6. **Mobile First**: Add cards on-the-go from your phone
-7. **Offline Ready**: Perfect for studying in places without WiFi
-
-## 🆚 PWA vs Web Version
-
-| Feature | Web Version | PWA (Installed) |
-|---------|-------------|-----------------|
-| Offline Use | ❌ | ✅ |
-| Home Screen Icon | ❌ | ✅ |
-| Fast Loading | ⚠️ | ✅ |
-| Standalone Window | ❌ | ✅ |
-| Auto-Updates | ❌ | ✅ |
-| Works in Browser | ✅ | ✅ |
+**Live:** https://nikastashinsky.github.io/student-kanban/
 
 ---
 
-Made with 💖 for students who love to stay organized!
+## Features
 
-**Questions or issues?** Check the code comments in the files - everything is documented!
+### Boards
+- **Multiple workspaces** — create separate boards for different projects or areas of life
+- Click a board name to rename it inline
+- Delete boards you no longer need
 
-**Want to learn more about PWAs?** Visit https://web.dev/progressive-web-apps/
+### Cards
+- **Three columns**: To Do, In Progress, Done
+- **Drag and drop** cards between columns and to reorder
+- Click any title or description to edit inline
+- **Tags**: cycle between task, idea, project
+- **Color accent** per card (5 colors, via dropdown)
+- **Priority asterisk** — tap ✳ to mark a card as high priority (turns blue)
+- **Checklists** — add sub-tasks inside any card; Enter to add, Backspace on empty to remove
+- **Archive** — done items can be moved to a hidden archive, toggled open at the bottom
+
+### Search
+- **Cmd+K** (or the search button) opens a global search across all boards, columns, and checklist items
+
+### Daily Journal
+- Trigger via the journal icon (top right)
+- **Eat the frog** — identify your single most important move of the day
+- **Today's tasks** — lightweight daily to-do list, auto-archives at midnight
+- **3 gratefuls** — one line each
+- **Mood** — pick an emoji from a dropdown; labels: amazing, good, calm, unsure, frustrated, low, tired, anxious
+- **Feeling log** — tap "feeling log ↗" to open the analytics view:
+  - 7-day trend: emoji row + score bars + weekly vibe summary. Tap any day to edit its mood
+  - Monthly calendar: color-coded cells (green = positive, red = rough) with mood emoji per day, navigate by month
+
+### Data
+- All data lives in your **browser's localStorage** — no accounts, no servers
+- **↓ cards** — export all boards and cards as a CSV (opens in Excel)
+- **↓ daily log** — export mood and gratitude history as a CSV
+- **↑ import** — import a cards CSV to restore or bulk-add cards
+- **Clear all** — wipe everything and start fresh
+
+### Design
+- Dot-grid paper background
+- Caveat handwriting font for headers, Helvetica for card content
+- Colored pencil-style left border accents on cards
+- Responsive — works on desktop, tablet, and mobile
+
+### PWA
+- Install to home screen on iOS, Android, or desktop Chrome/Edge
+- Works fully offline after first load
+- Opens as a standalone app (no browser chrome)
+
+---
+
+## Getting Started
+
+Open https://nikastashinsky.github.io/student-kanban/ in your browser. That's it — sample cards load on first visit.
+
+**Install as an app:**
+- **iOS**: Safari → Share → Add to Home Screen
+- **Android**: Chrome → Menu → Install app
+- **Desktop**: look for the install icon in the address bar
+
+---
+
+## Data & Privacy
+
+- 100% local — nothing leaves your device
+- No analytics, no tracking, no sign-in required
+- Export your data as CSV anytime as a backup
+- Import the CSV on any device to restore
+
+---
+
+## Files
+
+| File | Purpose |
+|------|---------|
+| `index.html` | Entire app — CSS, HTML, and JS in one file |
+| `manifest.json` | PWA metadata (name, icons, colors) |
+| `service-worker.js` | Offline caching |
+
+---
+
+## Browser Support
+
+| Browser | Support |
+|---------|---------|
+| Chrome / Edge | Full PWA |
+| Firefox | Full |
+| Safari (iOS 11.3+) | Partial PWA |
+| Samsung Internet | Full |
