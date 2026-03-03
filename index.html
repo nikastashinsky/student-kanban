@@ -725,6 +725,59 @@
             .board { grid-template-columns: 1fr 1fr; }
         }
 
+        /* ── Info button ── */
+        .info-trigger {
+            position: fixed;
+            bottom: 20px; right: 20px;
+            z-index: 400;
+            width: 32px; height: 32px;
+            background: transparent;
+            border: 1.5px solid #d4cfc9;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #c4bcb4;
+            transition: all 0.15s;
+        }
+
+        .info-trigger:hover { color: #888; border-color: #aaa; }
+
+        .info-popup {
+            display: none;
+            position: fixed;
+            bottom: 62px; right: 20px;
+            z-index: 400;
+            width: 240px;
+            background: #fff;
+            border: 1.5px solid #e0dcd8;
+            border-radius: 12px;
+            padding: 18px 18px 16px;
+            box-shadow: 0 6px 28px rgba(0,0,0,0.09);
+        }
+
+        .info-popup.open { display: block; }
+
+        .info-popup-title {
+            font-family: 'Caveat', cursive;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #2c2c2c;
+            margin-bottom: 10px;
+        }
+
+        .info-popup p {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.76em;
+            color: #777;
+            line-height: 1.55;
+            margin-bottom: 8px;
+        }
+
+        .info-popup p:last-child { margin-bottom: 0; }
+
         /* ── Daily panel button ── */
         .dp-trigger {
             position: fixed;
@@ -1435,6 +1488,15 @@
         </div>
     </div>
 
+    <!-- Info button -->
+    <button class="info-trigger" onclick="toggleInfo()" id="infoTrigger">i</button>
+    <div class="info-popup" id="infoPopup">
+        <div class="info-popup-title">where is my stuff saved? 🤔</div>
+        <p>Your cards and journal live inside <strong>this browser, on this device</strong> — like a notebook that only exists on your computer.</p>
+        <p>If you open the app on your phone or a different browser, it starts fresh. Clearing your browser data also wipes it.</p>
+        <p>To keep your stuff safe, hit <strong>↓ cards</strong> or <strong>↓ daily log</strong> to download a backup. You can bring it back anytime with <strong>↑ import</strong>.</p>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <div class="modal" id="confirmModal">
@@ -1847,6 +1909,10 @@
             if (!isOpen) dropdown.classList.add('open');
         }
 
+        function toggleInfo() {
+            document.getElementById('infoPopup').classList.toggle('open');
+        }
+
         function setupColorPickerDismiss() {
             document.addEventListener('click', e => {
                 if (!e.target.closest('.color-picker-wrap')) {
@@ -1855,6 +1921,9 @@
                 if (!e.target.closest('.dp-mood-wrap')) {
                     const dd = document.getElementById('dpMoodDropdown');
                     if (dd) { dd.classList.remove('open'); moodDropdownOpen = false; }
+                }
+                if (!e.target.closest('.info-trigger') && !e.target.closest('.info-popup')) {
+                    document.getElementById('infoPopup')?.classList.remove('open');
                 }
             });
         }
