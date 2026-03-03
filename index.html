@@ -757,7 +757,7 @@
         .info-popup {
             display: none;
             position: fixed;
-            bottom: 62px; right: 20px;
+            bottom: 104px; right: 20px;
             z-index: 400;
             width: 240px;
             background: #fff;
@@ -1406,6 +1406,189 @@
             .dp-panel { width: 100%; border-left: none; }
             .dp-trigger { top: 12px; right: 14px; }
         }
+
+        /* ── Background variants ── */
+        body[data-bg="lines"] {
+            background-image: repeating-linear-gradient(
+                transparent, transparent 19px,
+                rgba(140,118,88,0.18) 19px, rgba(140,118,88,0.18) 20px);
+        }
+        body[data-bg="plain"] { background-image: none; }
+        body[data-bg="iso"] {
+            background-image:
+                linear-gradient(30deg, rgba(140,118,88,0.13) 1px, transparent 1px),
+                linear-gradient(150deg, rgba(140,118,88,0.13) 1px, transparent 1px),
+                linear-gradient(rgba(140,118,88,0.09) 1px, transparent 1px);
+            background-size: 20px 34.6px, 20px 34.6px, 100% 34.6px;
+        }
+
+        /* ── Dark mode ── */
+        body.dark {
+            background-color: #1e1c1a;
+            color: #e8e4de;
+            background-image: radial-gradient(circle, rgba(200,180,150,0.10) 1.2px, transparent 1.2px);
+        }
+        body.dark[data-bg="lines"] {
+            background-image: repeating-linear-gradient(
+                transparent, transparent 19px,
+                rgba(200,180,150,0.10) 19px, rgba(200,180,150,0.10) 20px);
+        }
+        body.dark[data-bg="iso"] {
+            background-image:
+                linear-gradient(30deg, rgba(200,180,150,0.08) 1px, transparent 1px),
+                linear-gradient(150deg, rgba(200,180,150,0.08) 1px, transparent 1px),
+                linear-gradient(rgba(200,180,150,0.06) 1px, transparent 1px);
+            background-size: 20px 34.6px, 20px 34.6px, 100% 34.6px;
+        }
+        body.dark[data-bg="plain"] { background-image: none; }
+
+        body.dark .header h1 { color: #e8e4de; }
+        body.dark .board-tab { background: #2a2825; color: #b0a89e; border-color: #3a3632; }
+        body.dark .board-tab:hover { background: #322e2b; }
+        body.dark .board-tab.active { background: #3a3632; color: #e8e4de; border-color: #4a4642; }
+        body.dark .board-tab-add { background: transparent; color: #6a6460; border-color: #3a3632; }
+        body.dark .board-tab-add:hover { color: #a09890; }
+        body.dark .btn { background: #2a2825; color: #b0a89e; border-color: #3a3632; }
+        body.dark .btn:hover { background: #322e2b; }
+        body.dark .btn-danger { background: transparent; color: #c97c4a; border-color: #c97c4a; }
+        body.dark .btn-danger:hover { background: rgba(201,124,74,0.12); }
+        body.dark .card { background: #272421; border-color: rgba(255,255,255,0.07); }
+        body.dark .card-title { color: #ddd8d0 !important; }
+        body.dark .card-description { color: #888078 !important; }
+        body.dark [data-column="done"] .card { background: #211f1d; }
+        body.dark .add-card-btn { border-color: #3a3632; color: #4a4642; }
+        body.dark .add-card-btn:hover { color: #888; border-color: #5a5450; }
+        body.dark .archive-toggle { color: #6a6460; }
+        body.dark .archive-toggle:hover { color: #a09890; }
+        body.dark .info-trigger { border-color: #3a3632; color: #5a5450; }
+        body.dark .info-trigger:hover { color: #a09890; border-color: #5a5450; }
+        body.dark .info-popup { background: #272421; border-color: #3a3632; }
+        body.dark .info-popup-title { color: #e8e4de; }
+        body.dark .info-popup p { color: #7a7068; }
+        body.dark .dp-trigger { color: #888078; }
+        body.dark .dp-panel { background: #272421; border-color: #3a3632; }
+        body.dark .dp-head { border-color: #3a3632; }
+        body.dark .dp-date { color: #a09890; }
+        body.dark .dp-close { color: #6a6460; }
+        body.dark .dp-close:hover { color: #e8e4de; }
+        body.dark .dp-section { border-color: #3a3632; }
+        body.dark .dp-label { color: #7a7068; }
+        body.dark .dp-frog-hint { color: #5a5450; }
+        body.dark .dp-frog-input { background: #322e2b; border-color: #3a3632; color: #e8e4de; }
+        body.dark .dp-grateful-input { background: #322e2b; border-color: #3a3632; color: #e8e4de; }
+        body.dark .dp-grateful-input::placeholder { color: #4a4642; }
+        body.dark .dp-add-task { color: #6a6460; border-color: #3a3632; }
+        body.dark .dp-add-task:hover { color: #a09890; border-color: #5a5450; }
+        body.dark .dp-log-btn { color: #7a7068; border-color: #3a3632; }
+        body.dark .dp-mood-trigger { background: #322e2b; border-color: #3a3632; color: #b0a89e; }
+        body.dark .dp-mood-dropdown { background: #272421; border-color: #3a3632; }
+        body.dark .dp-mood-option { border-color: #3a3632; }
+        body.dark .dp-mood-option:hover { background: #322e2b; }
+        body.dark .toast { background: #3a3632; color: #e8e4de; }
+        body.dark .modal-box { background: #272421; border-color: #3a3632; }
+        body.dark .modal-box h2 { color: #e8e4de; }
+        body.dark .modal-box p { color: #7a7068; }
+        body.dark .search-wrap { background: #272421; border-color: #3a3632; }
+        body.dark .search-input { background: #322e2b; border-color: #3a3632; color: #e8e4de; }
+        body.dark .search-input::placeholder { color: #4a4642; }
+        body.dark .search-results { border-color: #3a3632; }
+        body.dark .search-result-item { border-color: #3a3632; }
+        body.dark .search-result-item:hover { background: #322e2b; }
+        body.dark .search-board-name { color: #7a7068; }
+        body.dark .feel-modal { background: #272421; border-color: #3a3632; }
+        body.dark .feel-modal-title { color: #e8e4de; }
+        body.dark .feel-close { color: #6a6460; }
+        body.dark .feel-close:hover { color: #e8e4de; }
+        body.dark .feel-trend { background: #1e1c1a; }
+        body.dark .feel-section-title { color: #7a7068; }
+        body.dark .feel-divider { border-color: #3a3632; }
+        body.dark .feel-cal-btn { color: #7a7068; }
+        body.dark .feel-cal-btn:hover { color: #e8e4de; }
+        body.dark .feel-cal-month { color: #a09890; }
+        body.dark .feel-cal-dow { color: #5a5450; }
+        body.dark .feel-cal-cell { border-color: #2a2825; color: #a09890; }
+        body.dark .feel-trend-edit-opt { background: #322e2b; border-color: #3a3632; }
+        body.dark .feel-trend-edit-opt:hover { background: #3a3632; }
+        body.dark .feel-trend-edit-opt.sel { background: #4a4642; border-color: #8a8078; }
+
+        /* ── Settings button & popup ── */
+        .settings-trigger {
+            position: fixed;
+            bottom: 62px; right: 20px;
+            z-index: 400;
+            width: 32px; height: 32px;
+            background: transparent;
+            border: 1.5px solid #d4cfc9;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: #c4bcb4;
+            transition: all 0.15s;
+        }
+        .settings-trigger:hover { color: #888; border-color: #aaa; }
+        body.dark .settings-trigger { border-color: #3a3632; color: #5a5450; }
+        body.dark .settings-trigger:hover { color: #a09890; border-color: #5a5450; }
+
+        .settings-popup {
+            display: none;
+            position: fixed;
+            bottom: 104px; right: 20px;
+            z-index: 400;
+            width: 210px;
+            background: #fff;
+            border: 1.5px solid #e0dcd8;
+            border-radius: 12px;
+            padding: 16px 18px 14px;
+            box-shadow: 0 6px 28px rgba(0,0,0,0.09);
+        }
+        .settings-popup.open { display: block; }
+        body.dark .settings-popup { background: #272421; border-color: #3a3632; }
+
+        .settings-popup-title {
+            font-family: 'Caveat', cursive;
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #2c2c2c;
+            margin-bottom: 12px;
+        }
+        body.dark .settings-popup-title { color: #e8e4de; }
+
+        .settings-row { margin-bottom: 10px; }
+        .settings-row:last-child { margin-bottom: 0; }
+
+        .settings-label {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.72em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #a09890;
+            margin-bottom: 6px;
+        }
+        body.dark .settings-label { color: #7a7068; }
+
+        .settings-options { display: flex; gap: 5px; flex-wrap: wrap; }
+
+        .settings-opt {
+            font-family: 'Caveat', cursive;
+            font-size: 0.9em;
+            padding: 3px 9px;
+            background: #f4f2ef;
+            border: 1.5px solid #e0dcd8;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #7a7068;
+            transition: all 0.15s;
+        }
+        .settings-opt:hover { border-color: #c0bcb8; color: #2c2c2c; }
+        .settings-opt.active { background: #ede8e2; border-color: #b0aca8; color: #2c2c2c; font-weight: 700; }
+        body.dark .settings-opt { background: #322e2b; border-color: #3a3632; color: #b0a89e; }
+        body.dark .settings-opt:hover { border-color: #5a5450; color: #e8e4de; }
+        body.dark .settings-opt.active { background: #4a4642; border-color: #8a8078; color: #e8e4de; }
+
+        /* ── Editable column headers ── */
+        .column-header[contenteditable] { cursor: text; outline: none; border-radius: 3px; }
+        .column-header[contenteditable]:focus { background: rgba(0,0,0,0.05); padding-inline: 4px; }
+        body.dark .column-header[contenteditable]:focus { background: rgba(255,255,255,0.06); }
     </style>
 </head>
 <body>
@@ -1435,19 +1618,25 @@
 
     <div class="board">
         <div class="column" data-column="todo">
-            <div class="column-header">to do</div>
+            <div class="column-header" id="col-header-todo" contenteditable="true" spellcheck="false"
+                 onblur="saveColName('todo', this.innerText)"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">to do</div>
             <button class="add-card-btn" onclick="addCard('todo')">+ add card</button>
             <div class="cards-container" id="todo-cards"></div>
         </div>
 
         <div class="column" data-column="inprogress">
-            <div class="column-header">in progress</div>
+            <div class="column-header" id="col-header-inprogress" contenteditable="true" spellcheck="false"
+                 onblur="saveColName('inprogress', this.innerText)"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">in progress</div>
             <button class="add-card-btn" onclick="addCard('inprogress')">+ add card</button>
             <div class="cards-container" id="inprogress-cards"></div>
         </div>
 
         <div class="column" data-column="done">
-            <div class="column-header">done</div>
+            <div class="column-header" id="col-header-done" contenteditable="true" spellcheck="false"
+                 onblur="saveColName('done', this.innerText)"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">done</div>
             <button class="add-card-btn" onclick="addCard('done')">+ add card</button>
             <div class="cards-container" id="done-cards"></div>
         </div>
@@ -1574,6 +1763,37 @@
         </div>
     </div>
 
+    <!-- Settings button -->
+    <button class="settings-trigger" onclick="toggleSettings()" id="settingsTrigger" title="personalize">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="1" y1="3.5" x2="13" y2="3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <line x1="1" y1="10.5" x2="13" y2="10.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <circle cx="4.5" cy="3.5" r="1.5" fill="currentColor"/>
+            <circle cx="9" cy="7" r="1.5" fill="currentColor"/>
+            <circle cx="5.5" cy="10.5" r="1.5" fill="currentColor"/>
+        </svg>
+    </button>
+    <div class="settings-popup" id="settingsPopup">
+        <div class="settings-popup-title">personalize</div>
+        <div class="settings-row">
+            <div class="settings-label">background</div>
+            <div class="settings-options">
+                <button class="settings-opt" data-bg="dots" onclick="setBg('dots')">dots</button>
+                <button class="settings-opt" data-bg="lines" onclick="setBg('lines')">lines</button>
+                <button class="settings-opt" data-bg="plain" onclick="setBg('plain')">plain</button>
+                <button class="settings-opt" data-bg="iso" onclick="setBg('iso')">iso</button>
+            </div>
+        </div>
+        <div class="settings-row">
+            <div class="settings-label">mode</div>
+            <div class="settings-options">
+                <button class="settings-opt" data-theme="light" onclick="setTheme('light')">light</button>
+                <button class="settings-opt" data-theme="dark" onclick="setTheme('dark')">dark</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Info button -->
     <button class="info-trigger" onclick="toggleInfo()" id="infoTrigger">i</button>
     <div class="info-popup" id="infoPopup">
@@ -1605,22 +1825,27 @@
         let draggedCard   = null;
         let confirmCallback = null;
         let archiveOpen   = false;
+        let currentTheme  = 'light';
+        let currentBg     = 'dots';
 
         const COLORS = ['#c97c4a', '#c94a7c', '#4a7cc9', '#4ab86a', '#8a4ac9'];
         const TAGS   = ['task', 'idea', 'project'];
         const COLS   = ['todo', 'inprogress', 'done'];
+        const DEFAULT_COL_NAMES = { todo: 'to do', inprogress: 'in progress', done: 'done' };
 
         // ── Init ──────────────────────────────────────────────────────────
 
         function init() {
             loadData();
             loadTitle();
+            loadSettings();
             loadDailyData();
             initDoodle();
             const allEmpty = COLS.every(c => !cards[c].length) && !cards.archived.length;
             if (allEmpty) loadSampleData();
             renderBoardTabs();
             renderAll();
+            renderColumnHeaders();
             updateDailyTrigger();
             setupDropZones();
             setupColorPickerDismiss();
@@ -1686,6 +1911,7 @@
             saveData();
             renderBoardTabs();
             renderAll();
+            renderColumnHeaders();
         }
 
         function addBoard() {
@@ -1998,6 +2224,77 @@
 
         function toggleInfo() {
             document.getElementById('infoPopup').classList.toggle('open');
+            document.getElementById('settingsPopup')?.classList.remove('open');
+        }
+
+        // ── Settings ──────────────────────────────────────────────────────
+
+        function loadSettings() {
+            currentTheme = localStorage.getItem('kanban_theme') || 'light';
+            currentBg    = localStorage.getItem('kanban_bg')    || 'dots';
+            applyTheme();
+            applyBg();
+            updateSettingsUI();
+        }
+
+        function saveSettings() {
+            localStorage.setItem('kanban_theme', currentTheme);
+            localStorage.setItem('kanban_bg',    currentBg);
+        }
+
+        function applyTheme() {
+            document.body.classList.toggle('dark', currentTheme === 'dark');
+        }
+
+        function applyBg() {
+            document.body.dataset.bg = currentBg;
+        }
+
+        function setTheme(t) {
+            currentTheme = t;
+            applyTheme();
+            saveSettings();
+            updateSettingsUI();
+        }
+
+        function setBg(bg) {
+            currentBg = bg;
+            applyBg();
+            saveSettings();
+            updateSettingsUI();
+        }
+
+        function updateSettingsUI() {
+            document.querySelectorAll('.settings-opt[data-bg]').forEach(btn =>
+                btn.classList.toggle('active', btn.dataset.bg === currentBg));
+            document.querySelectorAll('.settings-opt[data-theme]').forEach(btn =>
+                btn.classList.toggle('active', btn.dataset.theme === currentTheme));
+        }
+
+        function toggleSettings() {
+            document.getElementById('settingsPopup').classList.toggle('open');
+            document.getElementById('infoPopup')?.classList.remove('open');
+        }
+
+        // ── Column names ──────────────────────────────────────────────────
+
+        function renderColumnHeaders() {
+            const board = boards.find(b => b.id === activeBoardId);
+            const names = board?.columnNames || {};
+            COLS.forEach(col => {
+                const el = document.getElementById(`col-header-${col}`);
+                if (el) el.innerText = names[col] || DEFAULT_COL_NAMES[col];
+            });
+        }
+
+        function saveColName(col, text) {
+            const board = boards.find(b => b.id === activeBoardId);
+            if (!board) return;
+            if (!board.columnNames) board.columnNames = {};
+            const trimmed = text.trim();
+            board.columnNames[col] = trimmed || DEFAULT_COL_NAMES[col];
+            if (!trimmed) document.getElementById(`col-header-${col}`).innerText = DEFAULT_COL_NAMES[col];
+            saveData();
         }
 
         function setupColorPickerDismiss() {
@@ -2011,6 +2308,9 @@
                 }
                 if (!e.target.closest('.info-trigger') && !e.target.closest('.info-popup')) {
                     document.getElementById('infoPopup')?.classList.remove('open');
+                }
+                if (!e.target.closest('.settings-trigger') && !e.target.closest('.settings-popup')) {
+                    document.getElementById('settingsPopup')?.classList.remove('open');
                 }
             });
         }
@@ -2216,6 +2516,7 @@
                     b.cards.inprogress = b.cards.inprogress || [];
                     b.cards.done       = b.cards.done       || [];
                     b.cards.archived   = b.cards.archived   || [];
+                    b.columnNames      = b.columnNames      || {};
                     // ensure each card has checklist array
                     [...b.cards.todo, ...b.cards.inprogress, ...b.cards.done, ...b.cards.archived]
                         .forEach(c => { if (!c.checklist) c.checklist = []; });
@@ -2845,7 +3146,7 @@
         const DOODLE_FADE = 1500;
         const DOODLE_BLOCK = 'button, input, select, textarea, [contenteditable], ' +
             'a, label, .card, .dp-panel, .search-wrap, .modal-box, ' +
-            '.feel-modal, .info-popup';
+            '.feel-modal, .info-popup, .settings-popup';
 
         function initDoodle() {
             const canvas = document.getElementById('doodleCanvas');
@@ -2895,12 +3196,15 @@
                 const now = Date.now();
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 doodle.strokes = doodle.strokes.filter(s => now - s.t < DOODLE_FADE);
+                const dark = document.body.classList.contains('dark');
                 doodle.strokes.forEach(s => {
                     const alpha = Math.max(0, 1 - (now - s.t) / DOODLE_FADE);
                     ctx.beginPath();
                     ctx.moveTo(s.x1, s.y1);
                     ctx.lineTo(s.x2, s.y2);
-                    ctx.strokeStyle = `rgba(60, 55, 50, ${alpha * 0.65})`;
+                    ctx.strokeStyle = dark
+                        ? `rgba(220, 210, 195, ${alpha * 0.5})`
+                        : `rgba(60, 55, 50, ${alpha * 0.65})`;
                     ctx.lineWidth   = 2;
                     ctx.stroke();
                 });
