@@ -22,6 +22,15 @@
             min-height: 100vh;
             padding: 40px 28px;
             color: #2c2c2c;
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Ccircle cx='5' cy='5' r='3.5' fill='%23999'/%3E%3C/svg%3E") 5 5, crosshair;
+        }
+
+        /* ── Doodle canvas ── */
+        #doodleCanvas {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
         }
 
         /* ── Header ── */
@@ -1401,6 +1410,8 @@
 </head>
 <body>
 
+    <canvas id="doodleCanvas"></canvas>
+
     <div class="header">
         <h1 id="siteTitle" contenteditable="true" spellcheck="false" data-placeholder="name your space"
             onblur="saveTitle(this.innerText)"
@@ -1605,6 +1616,7 @@
             loadData();
             loadTitle();
             loadDailyData();
+            initDoodle();
             const allEmpty = COLS.every(c => !cards[c].length) && !cards.archived.length;
             if (allEmpty) loadSampleData();
             renderBoardTabs();
@@ -2825,6 +2837,74 @@
                 </div>`;
             }
             document.getElementById('feelCalGrid').innerHTML = html;
+        }
+
+        // ── Doodle ────────────────────────────────────────────────────────
+
+        const doodle = { drawing: false, lastX: 0, lastY: 0, strokes: [] };
+        const DOODLE_FADE = 1500; // ms
+
+        const DOODLE_IGNORE = 'button, input, [contenteditable], a, ' +
+            '.card, .dp-panel, .search-overlay, .modal, .feel-overlay, ' +
+            '.info-popup, .controls, .board-tabs-wrap, .archive-section, ' +
+            '.archive-toggle, .color-dropdown, .dp-mood-dropdown';
+
+        function isBackground(el) {
+            return !el.closest(DOODLE_IGNORE);
+        }
+
+        function initDoodle() {
+            const canvas = document.getElementById('doodleCanvas');
+            const ctx    = canvas.getContext('2d');
+            ctx.lineCap  = 'round';
+            ctx.lineJoin = 'round';
+
+            function resize() {
+                canvas.width  = window.innerWidth;
+                canvas.height = window.innerHeight;
+                doodle.strokes = [];
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            document.addEventListener('mousedown', e => {
+                if (e.button === 0 && isBackground(e.target)) {
+                    doodle.drawing = true;
+                    doodle.lastX   = e.clientX;
+                    doodle.lastY   = e.clientY;
+                }
+            });
+
+            document.addEventListener('mousemove', e => {
+                if (!doodle.drawing) return;
+                doodle.strokes.push({
+                    x1: doodle.lastX, y1: doodle.lastY,
+                    x2: e.clientX,    y2: e.clientY,
+                    t:  Date.now()
+                });
+                doodle.lastX = e.clientX;
+                doodle.lastY = e.clientY;
+            });
+
+            document.addEventListener('mouseup',    () => { doodle.drawing = false; });
+            document.addEventListener('mouseleave', () => { doodle.drawing = false; });
+
+            function render() {
+                const now = Date.now();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                doodle.strokes = doodle.strokes.filter(s => now - s.t < DOODLE_FADE);
+                doodle.strokes.forEach(s => {
+                    const alpha = Math.max(0, 1 - (now - s.t) / DOODLE_FADE);
+                    ctx.beginPath();
+                    ctx.moveTo(s.x1, s.y1);
+                    ctx.lineTo(s.x2, s.y2);
+                    ctx.strokeStyle = `rgba(70, 65, 60, ${alpha * 0.6})`;
+                    ctx.lineWidth   = 1.8;
+                    ctx.stroke();
+                });
+                requestAnimationFrame(render);
+            }
+            requestAnimationFrame(render);
         }
 
         // ── PWA ───────────────────────────────────────────────────────────
