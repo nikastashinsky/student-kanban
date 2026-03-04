@@ -165,6 +165,52 @@
         .btn-danger { border-color: #e8c0c0; color: #c07070; }
         .btn-danger:hover { background: rgba(200,80,80,0.05); border-color: #d09090; color: #a04848; }
 
+        /* ── Data menu dropdown ── */
+        .data-menu-wrap { position: relative; display: inline-flex; }
+
+        .data-menu-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            border: 1.5px solid #e0dcd8;
+            border-radius: 10px;
+            padding: 5px 0;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+            z-index: 200;
+            min-width: 170px;
+            white-space: nowrap;
+        }
+        .data-menu-dropdown.open { display: block; }
+
+        .data-menu-item {
+            display: block;
+            width: 100%;
+            padding: 8px 18px;
+            background: transparent;
+            border: none;
+            text-align: left;
+            font-family: 'Caveat', cursive;
+            font-size: 15px;
+            color: #666;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .data-menu-item:hover { background: #f4f2ef; color: #2c2c2c; }
+        .data-menu-item.danger { color: #c07070; }
+        .data-menu-item.danger:hover { background: rgba(200,80,80,0.05); color: #a04848; }
+
+        .data-menu-divider { border: none; border-top: 1px solid #f0ece8; margin: 4px 0; }
+
+        body.dark .data-menu-dropdown { background: #272421; border-color: #3a3632; }
+        body.dark .data-menu-item { color: #b0a89e; }
+        body.dark .data-menu-item:hover { background: #322e2b; color: #e8e4de; }
+        body.dark .data-menu-item.danger { color: #c97c4a; }
+        body.dark .data-menu-item.danger:hover { background: rgba(201,124,74,0.10); }
+        body.dark .data-menu-divider { border-color: #3a3632; }
+
         .search-kbd {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-size: 0.72em;
@@ -1608,10 +1654,16 @@
 
     <div class="controls">
         <button class="btn" onclick="openSearch()">search <kbd class="search-kbd">⌘K</kbd></button>
-        <button class="btn" onclick="exportCardsCSV()">↓ cards</button>
-        <button class="btn" onclick="exportDailyCSV()">↓ daily log</button>
-        <button class="btn" onclick="document.getElementById('csvImportInput').click()">↑ import</button>
-        <button class="btn btn-danger" onclick="clearAllData()">clear all</button>
+        <div class="data-menu-wrap">
+            <button class="btn" onclick="toggleDataMenu()">···</button>
+            <div class="data-menu-dropdown" id="dataMenuDropdown">
+                <button class="data-menu-item" onclick="exportCardsCSV(); closeDataMenu()">↓ export cards</button>
+                <button class="data-menu-item" onclick="exportDailyCSV(); closeDataMenu()">↓ export daily log</button>
+                <button class="data-menu-item" onclick="document.getElementById('csvImportInput').click(); closeDataMenu()">↑ import cards</button>
+                <hr class="data-menu-divider">
+                <button class="data-menu-item danger" onclick="clearAllData(); closeDataMenu()">clear all data</button>
+            </div>
+        </div>
     </div>
     <input type="file" id="csvImportInput" accept=".csv" style="display:none"
         onchange="importCardsCSV(this.files[0]); this.value=''">
@@ -2276,6 +2328,14 @@
             document.getElementById('infoPopup')?.classList.remove('open');
         }
 
+        function toggleDataMenu() {
+            document.getElementById('dataMenuDropdown').classList.toggle('open');
+        }
+
+        function closeDataMenu() {
+            document.getElementById('dataMenuDropdown').classList.remove('open');
+        }
+
         // ── Column names ──────────────────────────────────────────────────
 
         function renderColumnHeaders() {
@@ -2311,6 +2371,9 @@
                 }
                 if (!e.target.closest('.settings-trigger') && !e.target.closest('.settings-popup')) {
                     document.getElementById('settingsPopup')?.classList.remove('open');
+                }
+                if (!e.target.closest('.data-menu-wrap')) {
+                    document.getElementById('dataMenuDropdown')?.classList.remove('open');
                 }
             });
         }
