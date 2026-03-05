@@ -252,10 +252,8 @@
             color: #d4cfc9;
             cursor: pointer;
             padding: 0 2px 10px;
-            opacity: 0;
-            transition: opacity 0.15s, color 0.12s;
+            transition: color 0.12s;
         }
-        .column:hover .col-del-btn { opacity: 1; }
         .col-del-btn:hover { color: #c07070; }
 
         /* ── Add column button ── */
@@ -1745,6 +1743,7 @@
 
     <div class="controls">
         <button class="btn" onclick="openSearch()">search <kbd class="search-kbd">⌘K</kbd></button>
+        <button class="btn" onclick="addCustomCol()">+ column</button>
         <div class="data-menu-wrap">
             <button class="btn" onclick="toggleDataMenu()">···</button>
             <div class="data-menu-dropdown" id="dataMenuDropdown">
@@ -1967,7 +1966,7 @@
 
         function getActiveCols() {
             const board = boards.find(b => b.id === activeBoardId);
-            return [...FIXED_COLS, ...(board?.customCols || [])];
+            return board?.cols || [...FIXED_COLS];
         }
 
         function getColLabel(board, col) {
@@ -2058,7 +2057,8 @@
             const newBoard = {
                 id: 'b' + Date.now(),
                 name: 'new board',
-                customCols: [],
+                cols: ['todo', 'inprogress', 'done'],
+                columnNames: {},
                 cards: { todo: [], inprogress: [], done: [], archived: [] }
             };
             boards.push(newBoard);
@@ -2129,9 +2129,7 @@
             container.innerHTML = '';
 
             getActiveCols().forEach(col => {
-                const isCustom = !FIXED_COLS.includes(col);
                 const name = esc(getColLabel(board, col));
-
                 const colEl = document.createElement('div');
                 colEl.className = 'column';
                 colEl.dataset.column = col;
@@ -2142,7 +2140,7 @@
                              onblur="saveColName('${col}', this.innerText)"
                              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
                         >${name}</div>
-                        ${isCustom ? `<button class="col-del-btn" onclick="deleteCustomCol('${col}')" title="delete column">×</button>` : ''}
+                        <button class="col-del-btn" onclick="deleteCol('${col}')" title="delete column">×</button>
                     </div>
                     <button class="add-card-btn" onclick="addCard('${col}')">+ add card</button>
                     <div class="cards-container" id="${col}-cards"></div>
@@ -2150,20 +2148,14 @@
                 container.appendChild(colEl);
             });
 
-            const addBtn = document.createElement('button');
-            addBtn.className = 'add-col-btn';
-            addBtn.textContent = '+ column';
-            addBtn.onclick = addCustomCol;
-            container.appendChild(addBtn);
-
             setupDropZones();
         }
 
         function addCustomCol() {
             const board = boards.find(b => b.id === activeBoardId);
             const colId = 'col_' + Date.now();
-            board.customCols = board.customCols || [];
-            board.customCols.push(colId);
+            board.cols = board.cols || [...FIXED_COLS];
+            board.cols.push(colId);
             board.columnNames = board.columnNames || {};
             board.columnNames[colId] = 'column';
             board.cards[colId] = [];
@@ -2181,8 +2173,9 @@
             }, 60);
         }
 
-        function deleteCustomCol(colId) {
+        function deleteCol(colId) {
             const board = boards.find(b => b.id === activeBoardId);
+            if ((board.cols || []).length <= 1) { showToast("can't delete the last column"); return; }
             const name = getColLabel(board, colId);
             const count = (board.cards[colId] || []).length;
             const msg = count > 0
@@ -2192,7 +2185,7 @@
                 (board.cards[colId] || []).forEach(c => board.cards.archived.unshift(c));
                 delete board.cards[colId];
                 if (board.columnNames) delete board.columnNames[colId];
-                board.customCols = (board.customCols || []).filter(id => id !== colId);
+                board.cols = board.cols.filter(id => id !== colId);
                 saveData();
                 renderBoard();
                 renderAll();
@@ -2583,7 +2576,7 @@
             const results = [];
 
             boards.forEach(board => {
-                const boardCols = [...FIXED_COLS, ...(board.customCols || [])];
+                const boardCols = board.cols || [...FIXED_COLS];
                 boardCols.forEach(col => {
                     (board.cards[col] || []).forEach(card => {
                         const inTitle = card.title.toLowerCase().includes(q);
@@ -2742,17 +2735,16 @@
 
                 // ensure all keys exist on every board
                 boards.forEach(b => {
-                    b.cards.todo       = b.cards.todo       || [];
-                    b.cards.inprogress = b.cards.inprogress || [];
-                    b.cards.done       = b.cards.done       || [];
-                    b.cards.archived   = b.cards.archived   || [];
-                    b.columnNames      = b.columnNames      || {};
-                    b.customCols       = b.customCols       || [];
-                    // ensure card arrays exist for all custom cols
-                    b.customCols.forEach(col => { b.cards[col] = b.cards[col] || []; });
+                    b.columnNames = b.columnNames || {};
+                    // migrate customCols → cols
+                    if (!b.cols) {
+                        b.cols = [...FIXED_COLS, ...(b.customCols || [])];
+                    }
+                    // ensure card arrays exist for all cols
+                    b.cols.forEach(col => { b.cards[col] = b.cards[col] || []; });
+                    b.cards.archived = b.cards.archived || [];
                     // ensure each card has checklist array
-                    const allCols = [...FIXED_COLS, ...b.customCols, 'archived'];
-                    allCols.flatMap(col => b.cards[col] || [])
+                    [...b.cols, 'archived'].flatMap(col => b.cards[col] || [])
                         .forEach(c => { if (!c.checklist) c.checklist = []; });
                 });
 
@@ -3106,7 +3098,7 @@
         function exportCardsCSV() {
             const rows = [['Board', 'Column', 'Title', 'Description', 'Tag', 'Priority', 'Checklist']];
             boards.forEach(board => {
-                const allCols = [...FIXED_COLS, ...(board.customCols || []), 'archived'];
+                const allCols = [...(board.cols || FIXED_COLS), 'archived'];
                 allCols.forEach(col => {
                     const label = col === 'archived' ? 'Archived' : getColLabel(board, col);
                     (board.cards[col] || []).forEach(card => {
