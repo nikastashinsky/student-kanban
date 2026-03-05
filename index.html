@@ -223,12 +223,57 @@
 
         /* ── Board ── */
         .board {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
             gap: 24px;
-            max-width: 1120px;
-            margin: 0 auto;
+            align-items: flex-start;
+            overflow-x: auto;
+            padding-bottom: 16px;
         }
+
+        .column {
+            flex-shrink: 0;
+            width: 300px;
+        }
+
+        /* ── Column header row (wraps header + optional delete btn) ── */
+        .col-header-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            margin-bottom: 14px;
+        }
+        .col-header-row .column-header { flex: 1; margin-bottom: 0; }
+
+        .col-del-btn {
+            flex-shrink: 0;
+            background: transparent;
+            border: none;
+            font-size: 1.1em;
+            color: #d4cfc9;
+            cursor: pointer;
+            padding: 0 2px 10px;
+            opacity: 0;
+            transition: opacity 0.15s, color 0.12s;
+        }
+        .column:hover .col-del-btn { opacity: 1; }
+        .col-del-btn:hover { color: #c07070; }
+
+        /* ── Add column button ── */
+        .add-col-btn {
+            flex-shrink: 0;
+            align-self: flex-start;
+            padding: 7px 14px;
+            border: 1.5px dashed #d4cfc9;
+            border-radius: 100px;
+            background: transparent;
+            font-family: 'Caveat', cursive;
+            font-size: 15px;
+            color: #c4bcb4;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .add-col-btn:hover { color: #888; border-color: #aaa; }
 
         /* ── Column ── */
         .column-header {
@@ -242,6 +287,7 @@
             font-family: 'Caveat', cursive;
         }
 
+        .column-header { color: #a09890; border-color: #a09890; }
         [data-column="todo"]       .column-header { color: #c97c4a; border-color: #c97c4a; }
         [data-column="inprogress"] .column-header { color: #4a7cc9; border-color: #4a7cc9; }
         [data-column="done"]       .column-header { color: #8aaa80; border-color: #8aaa80; }
@@ -772,12 +818,8 @@
 
         /* ── Responsive ── */
         @media (max-width: 720px) {
-            .board { grid-template-columns: 1fr; }
             body { padding: 24px 14px; }
-        }
-
-        @media (min-width: 721px) and (max-width: 900px) {
-            .board { grid-template-columns: 1fr 1fr; }
+            .column { width: 260px; }
         }
 
         /* ── Info button ── */
@@ -1544,6 +1586,11 @@
         body.dark [data-column="done"] .card { background: #211f1d; }
         body.dark .add-card-btn { border-color: #3a3632; color: #4a4642; }
         body.dark .add-card-btn:hover { color: #888; border-color: #5a5450; }
+        body.dark .add-col-btn { border-color: #3a3632; color: #5a5450; }
+        body.dark .add-col-btn:hover { color: #a09890; border-color: #5a5450; }
+        body.dark .col-del-btn { color: #4a4642; }
+        body.dark .col-del-btn:hover { color: #c97c4a; }
+        body.dark .column-header { color: #7a7068; border-color: #7a7068; }
         body.dark .archive-toggle { color: #6a6460; }
         body.dark .archive-toggle:hover { color: #a09890; }
         body.dark .info-trigger { background: #272421; border-color: #3a3632; color: #5a5450; }
@@ -1712,31 +1759,7 @@
     <input type="file" id="csvImportInput" accept=".csv" style="display:none"
         onchange="importCardsCSV(this.files[0]); this.value=''">
 
-    <div class="board">
-        <div class="column" data-column="todo">
-            <div class="column-header" id="col-header-todo" contenteditable="true" spellcheck="false"
-                 onblur="saveColName('todo', this.innerText)"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">to do</div>
-            <button class="add-card-btn" onclick="addCard('todo')">+ add card</button>
-            <div class="cards-container" id="todo-cards"></div>
-        </div>
-
-        <div class="column" data-column="inprogress">
-            <div class="column-header" id="col-header-inprogress" contenteditable="true" spellcheck="false"
-                 onblur="saveColName('inprogress', this.innerText)"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">in progress</div>
-            <button class="add-card-btn" onclick="addCard('inprogress')">+ add card</button>
-            <div class="cards-container" id="inprogress-cards"></div>
-        </div>
-
-        <div class="column" data-column="done">
-            <div class="column-header" id="col-header-done" contenteditable="true" spellcheck="false"
-                 onblur="saveColName('done', this.innerText)"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">done</div>
-            <button class="add-card-btn" onclick="addCard('done')">+ add card</button>
-            <div class="cards-container" id="done-cards"></div>
-        </div>
-    </div>
+    <div class="board" id="boardCols"></div>
 
     <div class="archive-section">
         <div class="archive-toggle" id="archiveToggle" onclick="toggleArchive()">
@@ -1936,10 +1959,20 @@
         let currentTheme  = 'light';
         let currentBg     = 'dots';
 
-        const COLORS = ['#c97c4a', '#c94a7c', '#4a7cc9', '#4ab86a', '#8a4ac9'];
-        const TAGS   = ['task', 'idea', 'project'];
-        const COLS   = ['todo', 'inprogress', 'done'];
+        const COLORS      = ['#c97c4a', '#c94a7c', '#4a7cc9', '#4ab86a', '#8a4ac9'];
+        const TAGS        = ['task', 'idea', 'project'];
+        const FIXED_COLS  = ['todo', 'inprogress', 'done'];
+        const COLS        = FIXED_COLS; // legacy alias
         const DEFAULT_COL_NAMES = { todo: 'to do', inprogress: 'in progress', done: 'done' };
+
+        function getActiveCols() {
+            const board = boards.find(b => b.id === activeBoardId);
+            return [...FIXED_COLS, ...(board?.customCols || [])];
+        }
+
+        function getColLabel(board, col) {
+            return (board.columnNames || {})[col] || DEFAULT_COL_NAMES[col] || col;
+        }
 
         // ── Init ──────────────────────────────────────────────────────────
 
@@ -1949,13 +1982,12 @@
             loadSettings();
             loadDailyData();
             initDoodle();
-            const allEmpty = COLS.every(c => !cards[c].length) && !cards.archived.length;
+            const allEmpty = getActiveCols().every(c => !cards[c]?.length) && !cards.archived.length;
             if (allEmpty) loadSampleData();
             renderBoardTabs();
+            renderBoard();
             renderAll();
-            renderColumnHeaders();
             updateDailyTrigger();
-            setupDropZones();
             setupColorPickerDismiss();
             setupKeyboard();
             if (daily._archivedYesterday) {
@@ -2018,14 +2050,15 @@
             document.getElementById('archiveGrid').classList.remove('open');
             saveData();
             renderBoardTabs();
+            renderBoard();
             renderAll();
-            renderColumnHeaders();
         }
 
         function addBoard() {
             const newBoard = {
                 id: 'b' + Date.now(),
                 name: 'new board',
+                customCols: [],
                 cards: { todo: [], inprogress: [], done: [], archived: [] }
             };
             boards.push(newBoard);
@@ -2086,8 +2119,85 @@
         // ── Render ────────────────────────────────────────────────────────
 
         function renderAll() {
-            COLS.forEach(renderColumn);
+            getActiveCols().forEach(renderColumn);
             renderArchive();
+        }
+
+        function renderBoard() {
+            const board = boards.find(b => b.id === activeBoardId);
+            const container = document.getElementById('boardCols');
+            container.innerHTML = '';
+
+            getActiveCols().forEach(col => {
+                const isCustom = !FIXED_COLS.includes(col);
+                const name = esc(getColLabel(board, col));
+
+                const colEl = document.createElement('div');
+                colEl.className = 'column';
+                colEl.dataset.column = col;
+                colEl.innerHTML = `
+                    <div class="col-header-row">
+                        <div class="column-header" id="col-header-${col}"
+                             contenteditable="true" spellcheck="false"
+                             onblur="saveColName('${col}', this.innerText)"
+                             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+                        >${name}</div>
+                        ${isCustom ? `<button class="col-del-btn" onclick="deleteCustomCol('${col}')" title="delete column">×</button>` : ''}
+                    </div>
+                    <button class="add-card-btn" onclick="addCard('${col}')">+ add card</button>
+                    <div class="cards-container" id="${col}-cards"></div>
+                `;
+                container.appendChild(colEl);
+            });
+
+            const addBtn = document.createElement('button');
+            addBtn.className = 'add-col-btn';
+            addBtn.textContent = '+ column';
+            addBtn.onclick = addCustomCol;
+            container.appendChild(addBtn);
+
+            setupDropZones();
+        }
+
+        function addCustomCol() {
+            const board = boards.find(b => b.id === activeBoardId);
+            const colId = 'col_' + Date.now();
+            board.customCols = board.customCols || [];
+            board.customCols.push(colId);
+            board.columnNames = board.columnNames || {};
+            board.columnNames[colId] = 'column';
+            board.cards[colId] = [];
+            saveData();
+            renderBoard();
+            renderAll();
+            setTimeout(() => {
+                const el = document.getElementById(`col-header-${colId}`);
+                if (!el) return;
+                el.focus();
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+            }, 60);
+        }
+
+        function deleteCustomCol(colId) {
+            const board = boards.find(b => b.id === activeBoardId);
+            const name = getColLabel(board, colId);
+            const count = (board.cards[colId] || []).length;
+            const msg = count > 0
+                ? `delete "${name}"? ${count} card${count !== 1 ? 's' : ''} will be archived.`
+                : `delete "${name}"?`;
+            showModal(msg, () => {
+                (board.cards[colId] || []).forEach(c => board.cards.archived.unshift(c));
+                delete board.cards[colId];
+                if (board.columnNames) delete board.columnNames[colId];
+                board.customCols = (board.customCols || []).filter(id => id !== colId);
+                saveData();
+                renderBoard();
+                renderAll();
+                if (count > 0) showToast(`${count} card${count !== 1 ? 's' : ''} archived`);
+            });
         }
 
         function renderColumn(col) {
@@ -2473,15 +2583,16 @@
             const results = [];
 
             boards.forEach(board => {
-                COLS.forEach(col => {
-                    board.cards[col].forEach(card => {
+                const boardCols = [...FIXED_COLS, ...(board.customCols || [])];
+                boardCols.forEach(col => {
+                    (board.cards[col] || []).forEach(card => {
                         const inTitle = card.title.toLowerCase().includes(q);
                         const inDesc  = (card.description || '').toLowerCase().includes(q);
                         const inSteps = (card.checklist || []).some(i => i.text.toLowerCase().includes(q));
                         if (inTitle || inDesc || inSteps) results.push({ card, col, board });
                     });
                 });
-                board.cards.archived.forEach(card => {
+                (board.cards.archived || []).forEach(card => {
                     if (card.title.toLowerCase().includes(q) || (card.description || '').toLowerCase().includes(q)) {
                         results.push({ card, col: 'archived', board });
                     }
@@ -2498,7 +2609,7 @@
                     <div class="search-result-title">${highlightMatch(r.card.title, query)}</div>
                     <div class="search-result-meta">
                         ${boards.length > 1 ? `<span class="search-meta-board">${esc(r.board.name)}</span>` : ''}
-                        <span>${r.col === 'inprogress' ? 'in progress' : r.col}</span>
+                        <span>${getColLabel(r.board, r.col)}</span>
                     </div>
                 </div>
             `).join('');
@@ -2636,8 +2747,12 @@
                     b.cards.done       = b.cards.done       || [];
                     b.cards.archived   = b.cards.archived   || [];
                     b.columnNames      = b.columnNames      || {};
+                    b.customCols       = b.customCols       || [];
+                    // ensure card arrays exist for all custom cols
+                    b.customCols.forEach(col => { b.cards[col] = b.cards[col] || []; });
                     // ensure each card has checklist array
-                    [...b.cards.todo, ...b.cards.inprogress, ...b.cards.done, ...b.cards.archived]
+                    const allCols = [...FIXED_COLS, ...b.customCols, 'archived'];
+                    allCols.flatMap(col => b.cards[col] || [])
                         .forEach(c => { if (!c.checklist) c.checklist = []; });
                 });
 
@@ -2989,14 +3104,15 @@
         }
 
         function exportCardsCSV() {
-            const COL_LABELS = { todo: 'To Do', inprogress: 'In Progress', done: 'Done', archived: 'Archived' };
             const rows = [['Board', 'Column', 'Title', 'Description', 'Tag', 'Priority', 'Checklist']];
             boards.forEach(board => {
-                ['todo', 'inprogress', 'done', 'archived'].forEach(col => {
+                const allCols = [...FIXED_COLS, ...(board.customCols || []), 'archived'];
+                allCols.forEach(col => {
+                    const label = col === 'archived' ? 'Archived' : getColLabel(board, col);
                     (board.cards[col] || []).forEach(card => {
                         const checklist = (card.checklist || [])
                             .map(i => (i.done ? '[x] ' : '[ ] ') + i.text).join(' | ');
-                        rows.push([board.name, COL_LABELS[col], card.title,
+                        rows.push([board.name, label, card.title,
                             card.description, card.tag,
                             card.priority ? 'yes' : 'no', checklist]);
                     });
