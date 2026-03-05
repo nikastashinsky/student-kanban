@@ -1803,10 +1803,11 @@
 
     <div class="controls">
         <button class="btn" onclick="openSearch()">search <kbd class="search-kbd">⌘K</kbd></button>
-        <button class="btn" onclick="addCustomCol()">+ column</button>
         <div class="data-menu-wrap">
             <button class="btn" onclick="toggleDataMenu()">···</button>
             <div class="data-menu-dropdown" id="dataMenuDropdown">
+                <button class="data-menu-item" onclick="addCustomCol(); closeDataMenu()">+ add column</button>
+                <hr class="data-menu-divider">
                 <button class="data-menu-item" onclick="exportCardsCSV(); closeDataMenu()">↓ export cards</button>
                 <button class="data-menu-item" onclick="exportDailyCSV(); closeDataMenu()">↓ export daily log</button>
                 <button class="data-menu-item" onclick="document.getElementById('csvImportInput').click(); closeDataMenu()">↑ import cards</button>
