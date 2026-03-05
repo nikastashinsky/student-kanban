@@ -1527,6 +1527,59 @@
             animation: ribbit-pop 1s ease-out forwards;
         }
 
+        /* ── Archive celebration ── */
+        .archive-stamp {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6em;
+            font-weight: 900;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #22a855;
+            z-index: 10;
+            pointer-events: none;
+            border-radius: 4px;
+            animation: stamp-slam 0.44s cubic-bezier(0.3, 1.5, 0.4, 1) forwards;
+        }
+        @keyframes stamp-slam {
+            0%   { opacity: 0; transform: scale(3.5) rotate(-10deg); filter: blur(3px); }
+            52%  { opacity: 1; transform: scale(0.88) rotate(2deg);  filter: blur(0); }
+            72%  { transform: scale(1.08) rotate(-1deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+
+        .archive-flash {
+            position: absolute;
+            inset: 0;
+            background: rgba(34, 168, 85, 0.18);
+            pointer-events: none;
+            z-index: 8;
+            border-radius: 3px;
+            opacity: 0;
+            animation: flash-green 0.28s ease-out 0.28s forwards;
+        }
+        @keyframes flash-green {
+            0%   { opacity: 0; }
+            45%  { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .archive-fragment {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9000;
+            border-radius: 3px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.14);
+            animation: fragment-fly 0.46s cubic-bezier(0.2, 0, 0.7, 1) forwards;
+        }
+        @keyframes fragment-fly {
+            0%   { opacity: 1; transform: translate(0,0) rotate(0deg); }
+            25%  { opacity: 1; }
+            100% { opacity: 0; transform: translate(var(--tx), var(--ty)) rotate(var(--rot)); }
+        }
+
         @keyframes ribbit-pop {
             0%   { opacity: 0; transform: scale(0.7) translateY(0); }
             25%  { opacity: 1; transform: scale(1.2) translateY(-8px); }
@@ -2330,13 +2383,74 @@
         }
 
         function archiveCard(id, col) {
+            const el = document.querySelector(`[data-card-id="${id}"]`);
+            if (!el) { _doArchive(id, col); return; }
+            playArchiveAnimation(el, () => _doArchive(id, col));
+        }
+
+        function _doArchive(id, col) {
             const idx = cards[col].findIndex(c => c.id === id);
             if (idx === -1) return;
             const [card] = cards[col].splice(idx, 1);
             card.archivedFrom = col;
             cards.archived.unshift(card);
             saveData(); renderColumn(col); renderArchive();
-            showToast('archived ✓');
+            showToast('done ✓');
+        }
+
+        function playArchiveAnimation(cardEl, callback) {
+            // Lock size so card doesn't reflow during animation
+            cardEl.style.overflow = 'hidden';
+
+            // Flash + stamp
+            const flash = document.createElement('div');
+            flash.className = 'archive-flash';
+            cardEl.appendChild(flash);
+
+            const stamp = document.createElement('div');
+            stamp.className = 'archive-stamp';
+            stamp.textContent = '✓';
+            cardEl.appendChild(stamp);
+
+            // After stamp settles, shatter
+            setTimeout(() => {
+                const rect = cardEl.getBoundingClientRect();
+                const borderColor = cardEl.style.borderLeftColor || '#c97c4a';
+                const bg = window.getComputedStyle(cardEl).backgroundColor || '#fff';
+
+                // Hide original
+                cardEl.style.opacity = '0';
+                cardEl.style.pointerEvents = 'none';
+
+                // 4 fragments with clip-path slices + fly vectors
+                const frags = [
+                    { clip: 'polygon(0 0, 63% 0, 28% 54%, 0 38%)',             tx: -70, ty: -58, rot: -22 },
+                    { clip: 'polygon(37% 0, 100% 0, 100% 42%, 72% 54%)',       tx:  70, ty: -58, rot:  20 },
+                    { clip: 'polygon(0 42%, 30% 56%, 36% 100%, 0 100%)',       tx: -60, ty:  68, rot: -17 },
+                    { clip: 'polygon(64% 46%, 100% 36%, 100% 100%, 34% 100%)', tx:  65, ty:  68, rot:  19 },
+                ];
+
+                frags.forEach(f => {
+                    const frag = document.createElement('div');
+                    frag.className = 'archive-fragment';
+                    frag.style.left       = rect.left + 'px';
+                    frag.style.top        = rect.top  + 'px';
+                    frag.style.width      = rect.width  + 'px';
+                    frag.style.height     = rect.height + 'px';
+                    frag.style.clipPath   = f.clip;
+                    frag.style.background = bg;
+                    frag.style.borderLeft = `3px solid ${borderColor}`;
+                    frag.style.setProperty('--tx',  f.tx  + 'px');
+                    frag.style.setProperty('--ty',  f.ty  + 'px');
+                    frag.style.setProperty('--rot', f.rot + 'deg');
+                    document.body.appendChild(frag);
+                });
+
+                setTimeout(() => {
+                    document.querySelectorAll('.archive-fragment').forEach(f => f.remove());
+                    callback();
+                }, 500);
+            }, 460);
         }
 
         function restoreCard(id) {
