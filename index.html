@@ -231,8 +231,9 @@
         }
 
         .column {
-            flex-shrink: 0;
-            width: 300px;
+            flex: 1 0 260px;
+            max-width: 420px;
+            min-width: 0;
         }
 
         /* ── Column header row (wraps header + optional delete btn) ── */
@@ -252,7 +253,13 @@
             color: #d4cfc9;
             cursor: pointer;
             padding: 0 2px 10px;
-            transition: color 0.12s;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s, color 0.12s;
+        }
+        .col-header-row:focus-within .col-del-btn {
+            opacity: 1;
+            pointer-events: auto;
         }
         .col-del-btn:hover { color: #c07070; }
 
