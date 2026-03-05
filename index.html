@@ -783,16 +783,17 @@
         /* ── Info button ── */
         .info-trigger {
             position: fixed;
-            bottom: 20px; right: 20px;
+            bottom: 20px; right: 18px;
             z-index: 400;
-            width: 32px; height: 32px;
-            background: transparent;
+            width: 40px; height: 40px;
+            background: #fff;
             border: 1.5px solid #d4cfc9;
             border-radius: 50%;
             cursor: pointer;
+            touch-action: manipulation;
             display: flex; align-items: center; justify-content: center;
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 0.8em;
+            font-size: 0.85em;
             font-weight: 600;
             color: #c4bcb4;
             transition: all 0.15s;
@@ -803,7 +804,7 @@
         .info-popup {
             display: none;
             position: fixed;
-            bottom: 104px; right: 20px;
+            bottom: 128px; right: 18px;
             z-index: 400;
             width: 240px;
             background: #fff;
@@ -1506,7 +1507,7 @@
         body.dark .add-card-btn:hover { color: #888; border-color: #5a5450; }
         body.dark .archive-toggle { color: #6a6460; }
         body.dark .archive-toggle:hover { color: #a09890; }
-        body.dark .info-trigger { border-color: #3a3632; color: #5a5450; }
+        body.dark .info-trigger { background: #272421; border-color: #3a3632; color: #5a5450; }
         body.dark .info-trigger:hover { color: #a09890; border-color: #5a5450; }
         body.dark .info-popup { background: #272421; border-color: #3a3632; }
         body.dark .info-popup-title { color: #e8e4de; }
@@ -1560,25 +1561,26 @@
         /* ── Settings button & popup ── */
         .settings-trigger {
             position: fixed;
-            bottom: 62px; right: 20px;
+            bottom: 70px; right: 18px;
             z-index: 400;
-            width: 32px; height: 32px;
-            background: transparent;
+            width: 40px; height: 40px;
+            background: #fff;
             border: 1.5px solid #d4cfc9;
             border-radius: 50%;
             cursor: pointer;
+            touch-action: manipulation;
             display: flex; align-items: center; justify-content: center;
             color: #c4bcb4;
             transition: all 0.15s;
         }
         .settings-trigger:hover { color: #888; border-color: #aaa; }
-        body.dark .settings-trigger { border-color: #3a3632; color: #5a5450; }
+        body.dark .settings-trigger { background: #272421; border-color: #3a3632; color: #5a5450; }
         body.dark .settings-trigger:hover { color: #a09890; border-color: #5a5450; }
 
         .settings-popup {
             display: none;
             position: fixed;
-            bottom: 104px; right: 20px;
+            bottom: 128px; right: 18px;
             z-index: 400;
             width: 210px;
             background: #fff;
