@@ -3830,7 +3830,8 @@
                 clone.style.transition = 'none';
                 attachLoungeListeners(clone);
                 document.getElementById('loungeScene').appendChild(clone);
-                if (clone.dataset.type === 'frog') startFrogHop(clone);
+                if (clone.dataset.type === 'frog')   startFrogHop(clone);
+                if (clone.dataset.type === 'parrot') startParrotIdleHop(clone);
             });
         }
 
@@ -3874,10 +3875,10 @@
         }
 
         function startParrotIdleHop(parrotEl) {
-            clearTimeout(parrotHopTimer);
+            clearTimeout(parrotEl._hopTimer);
             function hop() {
                 if (!loungeActive || !document.getElementById('loungeScene')?.contains(parrotEl)) return;
-                if (loungeDragging === parrotEl) { parrotHopTimer = setTimeout(hop, 300); return; }
+                if (loungeDragging === parrotEl) { parrotEl._hopTimer = setTimeout(hop, 300); return; }
                 const isDouble = Math.random() > 0.5;
                 const cls      = isDouble ? 'parrot-double-hop' : 'parrot-hop';
                 const dur      = isDouble ? 620 : 400;
@@ -3885,9 +3886,9 @@
                 void parrotEl.offsetWidth;
                 parrotEl.classList.add(cls);
                 setTimeout(() => parrotEl.classList.remove(cls), dur);
-                parrotHopTimer = setTimeout(hop, 1800 + Math.random() * 3200);
+                parrotEl._hopTimer = setTimeout(hop, 1800 + Math.random() * 3200);
             }
-            parrotHopTimer = setTimeout(hop, 700 + Math.random() * 1000);
+            parrotEl._hopTimer = setTimeout(hop, 700 + Math.random() * 1000);
         }
 
         function parrotFlutter(el) {
@@ -3955,7 +3956,8 @@
         function startParrotSinging() {
             function sing() {
                 if (!loungeActive) return;
-                const parrot = document.querySelector('#loungeScene .lounge-emoji[data-type="parrot"]');
+                const parrots = [...document.querySelectorAll('#loungeScene .lounge-emoji[data-type="parrot"]')];
+                const parrot  = parrots[Math.floor(Math.random() * parrots.length)];
                 if (parrot) {
                     const notes = ['♪', '♫', '♩', '♬'];
                     const note = document.createElement('div');
