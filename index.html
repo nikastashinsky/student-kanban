@@ -3690,8 +3690,9 @@
             { type:'frog',   emoji:'🐸', xp:0.18, yp:0.62 },
             { type:'frog',   emoji:'🐸', xp:0.47, yp:0.70 },
             { type:'frog',   emoji:'🐸', xp:0.74, yp:0.58 },
-            { type:'palm',   emoji:'🌴', xp:0.04, yp:0.20, size:'4.4rem' },
-            { type:'parrot', emoji:'🦜', xp:0.10, yp:0.14, size:'1.8rem' },
+            { type:'palm',   emoji:'🌴', xp:0.04, yp:0.22, size:'4.4rem', id:'palm-left' },
+            // parrot positioned relative to palm-left: right branch at top of palm emoji
+            { type:'parrot', emoji:'🦜', relTo:'palm-left', xoff:42, yoff:-22, size:'1.8rem' },
             { type:'palm',   emoji:'🌴', xp:0.86, yp:0.55, size:'4.4rem' },
         ];
 
@@ -3740,11 +3741,22 @@
                 clearTimeout(t); return false;
             });
             const W = window.innerWidth, H = window.innerHeight;
+            const placed = {};
             LOUNGE_DEFAULTS.forEach(d => {
                 const el = createLoungeEmoji(d);
-                el.style.left = Math.round(d.xp * W) + 'px';
-                el.style.top  = Math.round(d.yp * H) + 'px';
                 if (d.size) el.style.fontSize = d.size;
+                let x, y;
+                if (d.relTo && placed[d.relTo]) {
+                    // Position relative to a named element + pixel offsets
+                    x = parseInt(placed[d.relTo].style.left) + (d.xoff || 0);
+                    y = parseInt(placed[d.relTo].style.top)  + (d.yoff || 0);
+                } else {
+                    x = Math.round(d.xp * W);
+                    y = Math.round(d.yp * H);
+                }
+                el.style.left = x + 'px';
+                el.style.top  = y + 'px';
+                if (d.id) placed[d.id] = el;
                 scene.appendChild(el);
             });
             startFrogHops();
