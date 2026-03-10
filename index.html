@@ -1820,8 +1820,15 @@
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
         }
         .lounge-emoji:active { cursor: grabbing; }
-        .lounge-emoji.hopping    { animation: frog-hop      0.45s ease-out; }
-        .lounge-emoji.fluttering { animation: parrot-flutter 0.65s ease-out; }
+        .lounge-emoji.hopping    { animation: frog-hop         0.45s ease-out; }
+        .lounge-emoji.parrot-idle { animation: parrot-idle-bob  0.85s ease-in-out infinite alternate; }
+        .lounge-emoji.fluttering { animation: parrot-flutter    0.65s ease-out; }
+        @keyframes parrot-idle-bob {
+            0%   { transform: translate(0px,  0px) rotate(0deg);   }
+            25%  { transform: translate(2px, -3px) rotate(3deg);   }
+            60%  { transform: translate(-2px,-2px) rotate(-2.5deg); }
+            100% { transform: translate(1px, -4px) rotate(2deg);   }
+        }
         @keyframes parrot-flutter {
             0%   { transform: scale(1)    rotate(0deg);   }
             18%  { transform: scale(1.4)  rotate(-18deg); }
@@ -3772,7 +3779,7 @@
             startFrogHops();
             startParrotSinging();
             const parrotEl = document.querySelector('#loungeScene .lounge-emoji[data-type="parrot"]');
-            if (parrotEl) startParrotIdleHop(parrotEl);
+            if (parrotEl) parrotEl.classList.add('parrot-idle');
         }
 
         function createLoungeEmoji(d) {
@@ -3834,7 +3841,7 @@
                 if (loungeDragging) {
                     const dx = e.clientX - loungeDragStartX;
                     const dy = e.clientY - loungeDragStartY;
-                    if (Math.sqrt(dx*dx + dy*dy) > 6) loungeDragMoved = true;
+                    if (Math.sqrt(dx*dx + dy*dy) > 12) loungeDragMoved = true;
                     loungeDragging.style.left = (e.clientX - loungeDragOffX) + 'px';
                     loungeDragging.style.top  = (e.clientY - loungeDragOffY) + 'px';
                     return;
@@ -3851,42 +3858,19 @@
                 loungeLastX   = null;
                 if (loungeDragging) {
                     loungeDragging.style.transition = '';
-                    if (loungeDragging._updateHome) loungeDragging._updateHome();
                     loungeDragging = null;
                 }
             });
         }
 
-        function startParrotIdleHop(parrotEl) {
-            let homeX = parseInt(parrotEl.style.left);
-            let homeY = parseInt(parrotEl.style.top);
-            parrotEl._updateHome = () => {
-                homeX = parseInt(parrotEl.style.left);
-                homeY = parseInt(parrotEl.style.top);
-            };
-            function hop() {
-                if (!loungeActive) return;
-                if (!document.getElementById('loungeScene')?.contains(parrotEl)) return;
-                if (loungeDragging === parrotEl) {
-                    const t = setTimeout(hop, 300); loungeTimers.push(t); return;
-                }
-                const dx = (Math.random() - 0.5) * 9;
-                const dy = (Math.random() - 0.5) * 5;
-                parrotEl.style.transition = 'left 0.14s ease-out, top 0.14s ease-out';
-                parrotEl.style.left = (homeX + dx) + 'px';
-                parrotEl.style.top  = (homeY + dy) + 'px';
-                const t = setTimeout(hop, 380 + Math.random() * 550);
-                loungeTimers.push(t);
-            }
-            const t = setTimeout(hop, 600 + Math.random() * 500);
-            loungeTimers.push(t);
-        }
-
         function parrotFlutter(el) {
-            el.classList.remove('fluttering');
+            el.classList.remove('parrot-idle', 'fluttering');
             void el.offsetWidth;
             el.classList.add('fluttering');
-            setTimeout(() => el.classList.remove('fluttering'), 650);
+            setTimeout(() => {
+                el.classList.remove('fluttering');
+                el.classList.add('parrot-idle');
+            }, 650);
             const notes = ['♪', '♫', '♩', '♬'];
             const note = document.createElement('div');
             note.className   = 'lounge-note';
