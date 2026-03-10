@@ -1821,7 +1821,23 @@
         }
         .lounge-emoji:active { cursor: grabbing; }
         .lounge-emoji.hopping    { animation: frog-hop         0.45s ease-out; }
-        .lounge-emoji.fluttering { animation: parrot-flutter 0.65s ease-out; }
+        .lounge-emoji.parrot-hop        { animation: parrot-hop-single 0.38s ease-out; }
+        .lounge-emoji.parrot-double-hop { animation: parrot-hop-double 0.60s ease-out; }
+        .lounge-emoji.fluttering        { animation: parrot-flutter    0.65s ease-out; }
+        @keyframes parrot-hop-single {
+            0%   { transform: translateY(0);    }
+            35%  { transform: translateY(-9px); }
+            70%  { transform: translateY(-1px); }
+            100% { transform: translateY(0);    }
+        }
+        @keyframes parrot-hop-double {
+            0%   { transform: translateY(0);    }
+            20%  { transform: translateY(-8px); }
+            38%  { transform: translateY(0);    }
+            58%  { transform: translateY(-7px); }
+            76%  { transform: translateY(0);    }
+            100% { transform: translateY(0);    }
+        }
         @keyframes parrot-flutter {
             0%   { transform: scale(1)    rotate(0deg);   }
             18%  { transform: scale(1.4)  rotate(-18deg); }
@@ -3852,7 +3868,6 @@
                 loungeLastX   = null;
                 if (loungeDragging) {
                     loungeDragging.style.transition = '';
-                    if (loungeDragging._updateHome) loungeDragging._updateHome();
                     loungeDragging = null;
                 }
             });
@@ -3860,27 +3875,19 @@
 
         function startParrotIdleHop(parrotEl) {
             clearTimeout(parrotHopTimer);
-            let homeX = parseInt(parrotEl.style.left);
-            let homeY = parseInt(parrotEl.style.top);
-            parrotEl._updateHome = () => {
-                homeX = parseInt(parrotEl.style.left);
-                homeY = parseInt(parrotEl.style.top);
-            };
             function hop() {
                 if (!loungeActive || !document.getElementById('loungeScene')?.contains(parrotEl)) return;
                 if (loungeDragging === parrotEl) { parrotHopTimer = setTimeout(hop, 300); return; }
-                const dx = (Math.random() - 0.5) * 14;
-                const dy = (Math.random() - 0.5) * 7;
-                parrotEl.style.transition = 'none';
-                parrotEl.style.left = (homeX + dx) + 'px';
-                parrotEl.style.top  = (homeY + dy) + 'px';
-                parrotEl.classList.remove('hopping');
+                const isDouble = Math.random() > 0.5;
+                const cls      = isDouble ? 'parrot-double-hop' : 'parrot-hop';
+                const dur      = isDouble ? 620 : 400;
+                parrotEl.classList.remove('parrot-hop', 'parrot-double-hop');
                 void parrotEl.offsetWidth;
-                parrotEl.classList.add('hopping');
-                setTimeout(() => parrotEl.classList.remove('hopping'), 450);
-                parrotHopTimer = setTimeout(hop, 1400 + Math.random() * 2600);
+                parrotEl.classList.add(cls);
+                setTimeout(() => parrotEl.classList.remove(cls), dur);
+                parrotHopTimer = setTimeout(hop, 1800 + Math.random() * 3200);
             }
-            parrotHopTimer = setTimeout(hop, 600 + Math.random() * 800);
+            parrotHopTimer = setTimeout(hop, 700 + Math.random() * 1000);
         }
 
         function parrotFlutter(el) {
