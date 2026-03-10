@@ -1356,11 +1356,25 @@
             font-style: italic;
         }
         .feel-coach {
-            font-family: 'Caveat', cursive;
-            font-size: 0.95em;
-            color: #8a9e7a;
             text-align: center;
-            margin-top: 4px;
+            margin-top: 7px;
+            padding: 0 4px;
+        }
+        .feel-quote-text {
+            display: block;
+            font-family: 'Caveat', cursive;
+            font-size: 1em;
+            color: #777;
+            line-height: 1.4;
+            font-style: italic;
+        }
+        .feel-quote-author {
+            display: block;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.7em;
+            color: #bbb;
+            margin-top: 3px;
+            letter-spacing: 0.02em;
         }
 
         .feel-divider {
@@ -3584,9 +3598,57 @@
             renderCalendar();
         }
 
+        const FEEL_QUOTES = {
+            rough: [
+                { text: 'The only way out is through.', author: 'Robert Frost' },
+                { text: 'Even the darkest night will end and the sun will rise.', author: 'Victor Hugo' },
+                { text: 'Rock bottom became the solid foundation on which I rebuilt my life.', author: 'J.K. Rowling' },
+                { text: 'You may encounter many defeats, but you must not be defeated.', author: 'Maya Angelou' },
+                { text: 'Out of suffering have emerged the strongest souls.', author: 'Khalil Gibran' },
+                { text: 'Fall seven times, stand up eight.', author: 'Japanese proverb' },
+                { text: 'It is during our darkest moments that we must focus to see the light.', author: 'Aristotle' },
+            ],
+            rising: [
+                { text: 'It does not matter how slowly you go as long as you do not stop.', author: 'Confucius' },
+                { text: 'Energy and persistence conquer all things.', author: 'Benjamin Franklin' },
+                { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' },
+                { text: 'Nothing in life is to be feared, only to be understood.', author: 'Marie Curie' },
+                { text: 'Action is the foundational key to all success.', author: 'Pablo Picasso' },
+                { text: 'Start where you are. Use what you have. Do what you can.', author: 'Arthur Ashe' },
+            ],
+            flourishing: [
+                { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
+                { text: 'Happiness is not something ready-made. It comes from your own actions.', author: 'Dalai Lama' },
+                { text: 'Keep your face always toward the sunshine, and shadows will fall behind you.', author: 'Walt Whitman' },
+                { text: 'Joy is the simplest form of gratitude.', author: 'Karl Barth' },
+                { text: 'Do what you can, with what you have, where you are.', author: 'Theodore Roosevelt' },
+                { text: 'The good life is one inspired by love and guided by knowledge.', author: 'Bertrand Russell' },
+            ],
+            volatile: [
+                { text: 'In the middle of every difficulty lies opportunity.', author: 'Albert Einstein' },
+                { text: 'If you\'re going through hell, keep going.', author: 'Winston Churchill' },
+                { text: 'Between stimulus and response there is a space — in that space lies our freedom.', author: 'Viktor Frankl' },
+                { text: 'This too shall pass.', author: 'Persian proverb' },
+                { text: 'Life is not about waiting for the storm to pass, but learning to dance in the rain.', author: 'Vivian Greene' },
+            ],
+            steady: [
+                { text: 'We are what we repeatedly do. Excellence is not an act, but a habit.', author: 'Aristotle' },
+                { text: 'Dripping water hollows out stone, not by force, but by persistence.', author: 'Ovid' },
+                { text: 'What you do every day matters more than what you do once in a while.', author: 'Gretchen Rubin' },
+                { text: 'In the long run, we shape our lives, and we shape ourselves.', author: 'Eleanor Roosevelt' },
+                { text: 'The quieter you become, the more you can hear.', author: 'Ram Dass' },
+                { text: 'Small deeds done are better than great deeds planned.', author: 'Peter Marshall' },
+            ],
+        };
+
+        function pickQuote(cat) {
+            const pool = FEEL_QUOTES[cat];
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
         function generateInsight(scores) {
             const valid = scores.filter(s => s !== null);
-            if (valid.length === 0) return { vibe: 'tap a day to edit · no entries yet', coach: null };
+            if (valid.length === 0) return { vibe: 'tap a day to edit · no entries yet', quote: null };
 
             const recent = valid.slice(-5);
             const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
@@ -3612,16 +3674,16 @@
             const high     = avg > 1;
             const low      = avg < -0.5;
 
-            if (rising && low)   return { vibe: 'tough stretch — but you\'re trending up ↑',  coach: 'one step at a time. you\'re already moving.' };
-            if (rising && high)  return { vibe: 'you\'re in a strong flow ↑',                  coach: 'keep it going — something\'s clearly working.' };
-            if (rising)          return { vibe: 'energy on the rise ↑',                         coach: 'notice what\'s working. do more of that.' };
-            if (falling && high) return { vibe: 'coming down from a high stretch',              coach: 'rest is part of the rhythm. protect your energy.' };
-            if (falling && low)  return { vibe: 'a rough few days ↓',                           coach: 'be gentle with yourself. this won\'t last.' };
-            if (falling)         return { vibe: 'energy dipping this week ↓',                   coach: 'what\'s draining you? small shifts add up.' };
-            if (volatile)        return { vibe: 'an up-and-down week',                           coach: 'big swings are exhausting. what brings you steadiness?' };
-            if (high)            return { vibe: 'a solid, positive stretch ✨',                   coach: 'you\'re doing well. notice what\'s contributing.' };
-            if (low)             return { vibe: 'a challenging stretch',                          coach: 'you\'re carrying something heavy. that\'s okay — it passes.' };
-            return                       { vibe: 'a steady, balanced week',                       coach: 'consistency is underrated. you\'re showing up.' };
+            if (rising && low)   return { vibe: 'tough stretch — but you\'re trending up ↑',  quote: pickQuote('rising') };
+            if (rising && high)  return { vibe: 'you\'re in a strong flow ↑',                  quote: pickQuote('flourishing') };
+            if (rising)          return { vibe: 'energy on the rise ↑',                         quote: pickQuote('rising') };
+            if (falling && high) return { vibe: 'coming down from a high stretch',              quote: pickQuote('steady') };
+            if (falling && low)  return { vibe: 'a rough few days ↓',                           quote: pickQuote('rough') };
+            if (falling)         return { vibe: 'energy dipping this week ↓',                   quote: pickQuote('rough') };
+            if (volatile)        return { vibe: 'an up-and-down week',                           quote: pickQuote('volatile') };
+            if (high)            return { vibe: 'a solid, positive stretch ✨',                   quote: pickQuote('flourishing') };
+            if (low)             return { vibe: 'a challenging stretch',                          quote: pickQuote('rough') };
+            return                       { vibe: 'a steady, balanced week',                       quote: pickQuote('steady') };
         }
 
         function renderTrend() {
@@ -3666,7 +3728,10 @@
 
             const insight = generateInsight(scores);
             document.getElementById('feelVibe').textContent = insight.vibe;
-            document.getElementById('feelCoach').textContent = insight.coach || '';
+            const q = insight.quote;
+            document.getElementById('feelCoach').innerHTML = q
+                ? `<span class="feel-quote-text">"${q.text}"</span><span class="feel-quote-author">— ${q.author}</span>`
+                : '';
         }
 
         function renderCalendar() {
