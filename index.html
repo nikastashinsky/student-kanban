@@ -1820,7 +1820,16 @@
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
         }
         .lounge-emoji:active { cursor: grabbing; }
-        .lounge-emoji.hopping { animation: frog-hop 0.45s ease-out; }
+        .lounge-emoji.hopping    { animation: frog-hop      0.45s ease-out; }
+        .lounge-emoji.fluttering { animation: parrot-flutter 0.65s ease-out; }
+        @keyframes parrot-flutter {
+            0%   { transform: scale(1)    rotate(0deg);   }
+            18%  { transform: scale(1.4)  rotate(-18deg); }
+            38%  { transform: scale(1.25) rotate(14deg);  }
+            55%  { transform: scale(1.15) rotate(-9deg);  }
+            72%  { transform: scale(1.07) rotate(5deg);   }
+            100% { transform: scale(1)    rotate(0deg);   }
+        }
         @keyframes frog-hop {
             0%   { transform: scale(1)    translateY(0);    }
             38%  { transform: scale(1.35) translateY(-14px); }
@@ -3784,7 +3793,8 @@
             });
             el.addEventListener('click', e => {
                 if (loungeDragMoved) return;
-                if (el.dataset.type === 'frog') frogCroak(el);
+                if (el.dataset.type === 'frog')   frogCroak(el);
+                if (el.dataset.type === 'parrot') parrotFlutter(el);
             });
             el.addEventListener('dblclick', e => {
                 e.stopPropagation();
@@ -3837,6 +3847,21 @@
                     loungeDragging = null;
                 }
             });
+        }
+
+        function parrotFlutter(el) {
+            el.classList.remove('fluttering');
+            void el.offsetWidth;
+            el.classList.add('fluttering');
+            setTimeout(() => el.classList.remove('fluttering'), 650);
+            const notes = ['♪', '♫', '♩', '♬'];
+            const note = document.createElement('div');
+            note.className   = 'lounge-note';
+            note.textContent = notes[Math.floor(Math.random() * notes.length)];
+            note.style.left  = (parseInt(el.style.left) + 18 + Math.random() * 12) + 'px';
+            note.style.top   = (parseInt(el.style.top)  - 12) + 'px';
+            document.getElementById('loungeScene').appendChild(note);
+            setTimeout(() => note.remove(), 2200);
         }
 
         function frogCroak(el) {
@@ -3910,19 +3935,18 @@
         function startDoveFlyby() {
             const t = setTimeout(function doFly() {
                 if (!loungeActive) return;
-                const fromLeft = Math.random() > 0.5;
+                // Always flies right → left
                 const startY   = 60 + Math.random() * (window.innerHeight * 0.35);
                 const dove     = document.createElement('div');
                 dove.className = 'lounge-dove';
                 dove.textContent = '🕊️';
                 dove.style.top  = startY + 'px';
-                dove.style.left = (fromLeft ? -70 : window.innerWidth + 20) + 'px';
-                // fromLeft=true (L→R): scaleX(-1) flipped; fromLeft=false (R→L): scaleX(1) natural
-                const dirScale = fromLeft ? 1 : -1;
+                dove.style.left = (window.innerWidth + 20) + 'px';
+                const dirScale  = 1;
                 document.getElementById('frogLounge').appendChild(dove);
 
-                const startX = fromLeft ? -70 : window.innerWidth + 20;
-                const endX   = fromLeft ? window.innerWidth + 70 : -70;
+                const startX = window.innerWidth + 20;
+                const endX   = -70;
                 const dur    = 9000 + Math.random() * 3000;
                 const t0     = Date.now();
 
