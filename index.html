@@ -3690,8 +3690,9 @@
             { type:'frog',   emoji:'🐸', xp:0.18, yp:0.62 },
             { type:'frog',   emoji:'🐸', xp:0.47, yp:0.70 },
             { type:'frog',   emoji:'🐸', xp:0.74, yp:0.58 },
-            { type:'parrot', emoji:'🦜', xp:0.12, yp:0.28, size:'2.6rem' },
-            { type:'palm',   emoji:'🌴', xp:0.06, yp:0.12, size:'3.4rem' },
+            { type:'palm',   emoji:'🌴', xp:0.04, yp:0.20, size:'4.4rem' },
+            { type:'parrot', emoji:'🦜', xp:0.10, yp:0.14, size:'1.8rem' },
+            { type:'palm',   emoji:'🌴', xp:0.86, yp:0.55, size:'4.4rem' },
         ];
 
         function toggleFrogLounge() {
@@ -3897,16 +3898,15 @@
         function startDoveFlyby() {
             const t = setTimeout(function doFly() {
                 if (!loungeActive) return;
-                // right→left is natural emoji direction; left→right flips with scaleX(-1)
                 const fromLeft = Math.random() > 0.5;
-                const startY   = 50 + Math.random() * (window.innerHeight * 0.38);
+                const startY   = 60 + Math.random() * (window.innerHeight * 0.35);
                 const dove     = document.createElement('div');
                 dove.className = 'lounge-dove';
                 dove.textContent = '🕊️';
                 dove.style.top  = startY + 'px';
                 dove.style.left = (fromLeft ? -70 : window.innerWidth + 20) + 'px';
-                // right→left (fromLeft=false): scaleX(1) natural; left→right: scaleX(-1) flipped
-                const dirScale = fromLeft ? -1 : 1;
+                // fromLeft=true (L→R): scaleX(-1) flipped; fromLeft=false (R→L): scaleX(1) natural
+                const dirScale = fromLeft ? 1 : -1;
                 document.getElementById('frogLounge').appendChild(dove);
 
                 const startX = fromLeft ? -70 : window.innerWidth + 20;
@@ -3919,21 +3919,24 @@
                     const p = (Date.now() - t0) / dur;
                     if (p >= 1) { dove.remove(); return; }
 
-                    // Position: gentle arc + organic bob
-                    const x   = startX + (endX - startX) * p;
-                    const arc = Math.sin(p * Math.PI) * -32;
-                    const bob = Math.sin(p * Math.PI * 16) * 3;
+                    // Undulating flight path — 4 rise-and-glide cycles
+                    const wave     = Math.sin(p * Math.PI * 8);
+                    const waveDeriv = Math.cos(p * Math.PI * 8); // >0 = descending, <0 = ascending
+                    const x = startX + (endX - startX) * p;
+                    const y = startY + wave * 18;
                     dove.style.left = x + 'px';
-                    dove.style.top  = (startY + arc + bob) + 'px';
+                    dove.style.top  = y + 'px';
 
-                    // Wing flap: scaleY oscillates between 0.45 and 1.0
-                    // Slightly faster flap when ascending (first half), slower when gliding down
-                    const flapSpeed = p < 0.5 ? 7 : 5;
-                    const flap = 0.45 + Math.abs(Math.sin(Date.now() / 1000 * Math.PI * flapSpeed)) * 0.55;
+                    // Wing flap synced with path:
+                    // ascending (waveDeriv < 0) → active flap (scaleY low, cycling fast)
+                    // descending/gliding (waveDeriv > 0) → wings spread (scaleY near 1)
+                    const isAscending = waveDeriv < 0;
+                    const flap = isAscending
+                        ? 0.38 + Math.abs(Math.sin(Date.now() / 130)) * 0.52
+                        : 0.82 + Math.sin(Date.now() / 320) * 0.18;
 
-                    // Slight pitch: tilt nose up on ascent, level on descent
-                    const arcVel  = Math.cos(p * Math.PI) * -32 / dur * 1000;
-                    const tilt    = Math.max(-18, Math.min(18, arcVel * 0.35));
+                    // Nose tilts up on ascent, down on glide
+                    const tilt = Math.max(-14, Math.min(14, -waveDeriv * 13));
 
                     dove.style.transform = `scaleX(${dirScale}) scaleY(${flap.toFixed(3)}) rotate(${(tilt * dirScale).toFixed(1)}deg)`;
 
