@@ -3677,6 +3677,7 @@
         // ── Frog Lounge ───────────────────────────────────────────────────
 
         let loungeActive    = false;
+        let loungeDrawing   = false;
         let loungeTimers    = [];
         let loungeStrokes   = [];
         let loungeDragging  = null;
@@ -3691,11 +3692,6 @@
             { type:'frog',   emoji:'🐸', xp:0.74, yp:0.58 },
             { type:'parrot', emoji:'🦜', xp:0.12, yp:0.28, size:'2.6rem' },
             { type:'palm',   emoji:'🌴', xp:0.06, yp:0.12, size:'3.4rem' },
-            { type:'plant',  emoji:'🌱', xp:0.32, yp:0.78 },
-            { type:'plant',  emoji:'🌱', xp:0.58, yp:0.82 },
-            { type:'plant',  emoji:'🌱', xp:0.88, yp:0.74 },
-            { type:'shroom', emoji:'🍄', xp:0.50, yp:0.54 },
-            { type:'shroom', emoji:'🍄', xp:0.80, yp:0.46 },
         ];
 
         function toggleFrogLounge() {
@@ -3795,6 +3791,17 @@
 
         // Global lounge mouse handlers (added once in init)
         function initLoungeMouseHandlers() {
+            const lounge = document.getElementById('frogLounge');
+
+            // Start a stroke on mousedown (only on background, not interactive elements)
+            lounge.addEventListener('mousedown', e => {
+                if (e.target.closest('.lounge-emoji, .lounge-controls, .lounge-ctrl-btn, .frog-btn')) return;
+                loungeDrawing = true;
+                loungeLastX   = e.clientX;
+                loungeLastY   = e.clientY;
+            });
+
+            // Continue stroke + handle drag on window (handles fast mouse moves)
             window.addEventListener('mousemove', e => {
                 if (loungeDragging) {
                     loungeDragMoved = true;
@@ -3802,22 +3809,20 @@
                     loungeDragging.style.top  = (e.clientY - loungeDragOffY) + 'px';
                     return;
                 }
-                if (!loungeActive || e.buttons !== 1) { loungeLastX = null; return; }
-                if (e.target.closest('.lounge-emoji, .lounge-controls, .lounge-ctrl-btn, .frog-btn')) {
-                    loungeLastX = null; return;
-                }
-                if (loungeLastX !== null) {
+                if (loungeDrawing && loungeLastX !== null) {
                     loungeStrokes.push({ x1: loungeLastX, y1: loungeLastY, x2: e.clientX, y2: e.clientY });
+                    loungeLastX = e.clientX;
+                    loungeLastY = e.clientY;
                 }
-                loungeLastX = e.clientX;
-                loungeLastY = e.clientY;
             });
+
             window.addEventListener('mouseup', () => {
+                loungeDrawing = false;
+                loungeLastX   = null;
                 if (loungeDragging) {
                     loungeDragging.style.transition = '';
                     loungeDragging = null;
                 }
-                loungeLastX = null;
             });
         }
 
