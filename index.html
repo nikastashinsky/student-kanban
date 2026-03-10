@@ -1898,7 +1898,6 @@
             white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
         }
         .lounge-ctrl-btn:hover { background: rgba(255,255,255,0.97); transform: scale(1.02); }
-        .lounge-ctrl-row { display: flex; align-items: center; gap: 7px; }
         .lounge-info-btn {
             width: 26px; height: 26px; flex-shrink: 0;
             background: rgba(255,255,255,0.82); border: 1.5px solid #8abc78;
@@ -1909,7 +1908,7 @@
         }
         .lounge-info-btn:hover { background: rgba(255,255,255,0.97); }
         .lounge-info-tip {
-            display: none; position: absolute; left: 34px; bottom: 0;
+            display: none; position: absolute; left: 34px; top: 0;
             width: 210px; background: rgba(255,255,255,0.96);
             border: 1.5px solid #8abc78; border-radius: 12px;
             padding: 10px 13px; pointer-events: none;
@@ -1930,16 +1929,14 @@
         <canvas id="loungeCanvas"></canvas>
         <div id="loungeScene"></div>
         <div class="lounge-controls">
-            <div class="lounge-ctrl-row">
-                <button class="lounge-ctrl-btn" onclick="clearScene()">🌿 reset scene</button>
-                <div class="lounge-info-btn">ⓘ
-                    <div class="lounge-info-tip">
-                        <strong>The Oasis.</strong> A place to chill.<br><br>
-                        Drag anything around. Double-click to duplicate. Doodle.
-                    </div>
+            <div class="lounge-info-btn">ⓘ
+                <div class="lounge-info-tip">
+                    <strong>The Oasis.</strong> A place to chill.<br><br>
+                    Drag anything around. Double-click to duplicate. Doodle.
                 </div>
             </div>
-            <button class="lounge-ctrl-btn" onclick="clearLoungeDoodles()">✏️ clear doodles</button>
+            <button class="lounge-ctrl-btn" onclick="clearScene()">reset oasis</button>
+            <button class="lounge-ctrl-btn" onclick="clearLoungeDoodles()">clear doodles</button>
         </div>
     </div>
 
