@@ -1898,6 +1898,26 @@
             white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
         }
         .lounge-ctrl-btn:hover { background: rgba(255,255,255,0.97); transform: scale(1.02); }
+        .lounge-ctrl-row { display: flex; align-items: center; gap: 7px; }
+        .lounge-info-btn {
+            width: 26px; height: 26px; flex-shrink: 0;
+            background: rgba(255,255,255,0.82); border: 1.5px solid #8abc78;
+            border-radius: 50%; font-size: 13px; color: #3d6e2d;
+            cursor: default; backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+            position: relative; transition: background 0.15s;
+        }
+        .lounge-info-btn:hover { background: rgba(255,255,255,0.97); }
+        .lounge-info-tip {
+            display: none; position: absolute; left: 34px; bottom: 0;
+            width: 210px; background: rgba(255,255,255,0.96);
+            border: 1.5px solid #8abc78; border-radius: 12px;
+            padding: 10px 13px; pointer-events: none;
+            font-family: 'Caveat', cursive; font-size: 14.5px;
+            color: #3d6e2d; line-height: 1.55;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.09);
+        }
+        .lounge-info-btn:hover .lounge-info-tip { display: block; }
     </style>
 </head>
 <body>
@@ -1910,7 +1930,16 @@
         <canvas id="loungeCanvas"></canvas>
         <div id="loungeScene"></div>
         <div class="lounge-controls">
-            <button class="lounge-ctrl-btn" onclick="clearScene()">🌿 reset scene</button>
+            <div class="lounge-ctrl-row">
+                <button class="lounge-ctrl-btn" onclick="clearScene()">🌿 reset scene</button>
+                <div class="lounge-info-btn">ⓘ
+                    <div class="lounge-info-tip">
+                        <strong>The Oasis</strong> — a quiet pause between tasks.<br><br>
+                        Drag friends around, doodle freely, double-click anything to duplicate it.<br><br>
+                        Step away. Return with clarity.
+                    </div>
+                </div>
+            </div>
             <button class="lounge-ctrl-btn" onclick="clearLoungeDoodles()">✏️ clear doodles</button>
         </div>
     </div>
