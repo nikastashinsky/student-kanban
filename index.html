@@ -3689,9 +3689,10 @@
         let loungeDrawing   = false;
         let loungeTimers    = [];
         let loungeStrokes   = [];
-        let loungeDragging  = null;
-        let loungeDragOffX  = 0, loungeDragOffY = 0;
-        let loungeDragMoved = false;
+        let loungeDragging   = null;
+        let loungeDragOffX   = 0, loungeDragOffY = 0;
+        let loungeDragStartX = 0, loungeDragStartY = 0;
+        let loungeDragMoved  = false;
         let loungeCtx       = null;
         let loungeLastX     = null, loungeLastY = null;
 
@@ -3770,6 +3771,8 @@
             });
             startFrogHops();
             startParrotSinging();
+            const parrotEl = document.querySelector('#loungeScene .lounge-emoji[data-type="parrot"]');
+            if (parrotEl) startParrotIdleHop(parrotEl);
         }
 
         function createLoungeEmoji(d) {
@@ -3783,10 +3786,12 @@
 
         function attachLoungeListeners(el) {
             el.addEventListener('mousedown', e => {
-                loungeDragging  = el;
-                loungeDragMoved = false;
-                loungeDragOffX  = e.clientX - parseInt(el.style.left || 0);
-                loungeDragOffY  = e.clientY - parseInt(el.style.top  || 0);
+                loungeDragging   = el;
+                loungeDragMoved  = false;
+                loungeDragOffX   = e.clientX - parseInt(el.style.left || 0);
+                loungeDragOffY   = e.clientY - parseInt(el.style.top  || 0);
+                loungeDragStartX = e.clientX;
+                loungeDragStartY = e.clientY;
                 el.style.transition = 'none';
                 e.preventDefault();
                 e.stopPropagation();
@@ -3827,7 +3832,9 @@
             // Continue stroke + handle drag on window (handles fast mouse moves)
             window.addEventListener('mousemove', e => {
                 if (loungeDragging) {
-                    loungeDragMoved = true;
+                    const dx = e.clientX - loungeDragStartX;
+                    const dy = e.clientY - loungeDragStartY;
+                    if (Math.sqrt(dx*dx + dy*dy) > 6) loungeDragMoved = true;
                     loungeDragging.style.left = (e.clientX - loungeDragOffX) + 'px';
                     loungeDragging.style.top  = (e.clientY - loungeDragOffY) + 'px';
                     return;
@@ -3844,9 +3851,35 @@
                 loungeLastX   = null;
                 if (loungeDragging) {
                     loungeDragging.style.transition = '';
+                    if (loungeDragging._updateHome) loungeDragging._updateHome();
                     loungeDragging = null;
                 }
             });
+        }
+
+        function startParrotIdleHop(parrotEl) {
+            let homeX = parseInt(parrotEl.style.left);
+            let homeY = parseInt(parrotEl.style.top);
+            parrotEl._updateHome = () => {
+                homeX = parseInt(parrotEl.style.left);
+                homeY = parseInt(parrotEl.style.top);
+            };
+            function hop() {
+                if (!loungeActive) return;
+                if (!document.getElementById('loungeScene')?.contains(parrotEl)) return;
+                if (loungeDragging === parrotEl) {
+                    const t = setTimeout(hop, 300); loungeTimers.push(t); return;
+                }
+                const dx = (Math.random() - 0.5) * 9;
+                const dy = (Math.random() - 0.5) * 5;
+                parrotEl.style.transition = 'left 0.14s ease-out, top 0.14s ease-out';
+                parrotEl.style.left = (homeX + dx) + 'px';
+                parrotEl.style.top  = (homeY + dy) + 'px';
+                const t = setTimeout(hop, 380 + Math.random() * 550);
+                loungeTimers.push(t);
+            }
+            const t = setTimeout(hop, 600 + Math.random() * 500);
+            loungeTimers.push(t);
         }
 
         function parrotFlutter(el) {
