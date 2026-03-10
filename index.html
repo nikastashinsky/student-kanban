@@ -1821,14 +1821,7 @@
         }
         .lounge-emoji:active { cursor: grabbing; }
         .lounge-emoji.hopping    { animation: frog-hop         0.45s ease-out; }
-        .lounge-emoji.parrot-idle { animation: parrot-idle-bob  3.2s ease-in-out infinite alternate; }
-        .lounge-emoji.fluttering { animation: parrot-flutter    0.65s ease-out; }
-        @keyframes parrot-idle-bob {
-            0%   { transform: translate(0px,  0px) rotate(0deg);   }
-            25%  { transform: translate(2px, -3px) rotate(3deg);   }
-            60%  { transform: translate(-2px,-2px) rotate(-2.5deg); }
-            100% { transform: translate(1px, -4px) rotate(2deg);   }
-        }
+        .lounge-emoji.fluttering { animation: parrot-flutter 0.65s ease-out; }
         @keyframes parrot-flutter {
             0%   { transform: scale(1)    rotate(0deg);   }
             18%  { transform: scale(1.4)  rotate(-18deg); }
@@ -3695,6 +3688,7 @@
         let loungeActive    = false;
         let loungeDrawing   = false;
         let loungeTimers    = [];
+        let parrotHopTimer  = null;
         let loungeStrokes   = [];
         let loungeDragging   = null;
         let loungeDragOffX   = 0, loungeDragOffY = 0;
@@ -3779,7 +3773,7 @@
             startFrogHops();
             startParrotSinging();
             const parrotEl = document.querySelector('#loungeScene .lounge-emoji[data-type="parrot"]');
-            if (parrotEl) parrotEl.classList.add('parrot-idle');
+            if (parrotEl) startParrotIdleHop(parrotEl);
         }
 
         function createLoungeEmoji(d) {
@@ -3858,19 +3852,42 @@
                 loungeLastX   = null;
                 if (loungeDragging) {
                     loungeDragging.style.transition = '';
+                    if (loungeDragging._updateHome) loungeDragging._updateHome();
                     loungeDragging = null;
                 }
             });
         }
 
+        function startParrotIdleHop(parrotEl) {
+            clearTimeout(parrotHopTimer);
+            let homeX = parseInt(parrotEl.style.left);
+            let homeY = parseInt(parrotEl.style.top);
+            parrotEl._updateHome = () => {
+                homeX = parseInt(parrotEl.style.left);
+                homeY = parseInt(parrotEl.style.top);
+            };
+            function hop() {
+                if (!loungeActive || !document.getElementById('loungeScene')?.contains(parrotEl)) return;
+                if (loungeDragging === parrotEl) { parrotHopTimer = setTimeout(hop, 300); return; }
+                const dx = (Math.random() - 0.5) * 14;
+                const dy = (Math.random() - 0.5) * 7;
+                parrotEl.style.transition = 'none';
+                parrotEl.style.left = (homeX + dx) + 'px';
+                parrotEl.style.top  = (homeY + dy) + 'px';
+                parrotEl.classList.remove('hopping');
+                void parrotEl.offsetWidth;
+                parrotEl.classList.add('hopping');
+                setTimeout(() => parrotEl.classList.remove('hopping'), 450);
+                parrotHopTimer = setTimeout(hop, 1400 + Math.random() * 2600);
+            }
+            parrotHopTimer = setTimeout(hop, 600 + Math.random() * 800);
+        }
+
         function parrotFlutter(el) {
-            el.classList.remove('parrot-idle', 'fluttering');
+            el.classList.remove('fluttering');
             void el.offsetWidth;
             el.classList.add('fluttering');
-            setTimeout(() => {
-                el.classList.remove('fluttering');
-                el.classList.add('parrot-idle');
-            }, 650);
+            setTimeout(() => el.classList.remove('fluttering'), 650);
             const notes = ['♪', '♫', '♩', '♬'];
             const note = document.createElement('div');
             note.className   = 'lounge-note';
