@@ -1355,6 +1355,13 @@
             text-align: center;
             font-style: italic;
         }
+        .feel-coach {
+            font-family: 'Caveat', cursive;
+            font-size: 0.95em;
+            color: #8a9e7a;
+            text-align: center;
+            margin-top: 4px;
+        }
 
         .feel-divider {
             border: none;
@@ -2093,6 +2100,7 @@
                 <div class="feel-trend-days" id="feelTrendDays"></div>
                 <div class="feel-trend-edit-row" id="feelTrendEditRow"></div>
                 <div class="feel-vibe" id="feelVibe"></div>
+                <div class="feel-coach" id="feelCoach"></div>
             </div>
             <hr class="feel-divider">
             <div class="feel-cal-nav">
@@ -3057,9 +3065,9 @@
 
         // ── Daily panel ───────────────────────────────────────────────────
 
-        const MOODS = ['🤩','😊','😌','🤔','😤','😔','🥱','😰'];
-        const MOOD_LABELS = { '🤩':'amazing', '😊':'good', '😌':'calm', '🤔':'unsure', '😤':'frustrated', '😔':'low', '🥱':'tired', '😰':'anxious' };
-        const MOOD_SCORES = { '🤩':2, '😊':1.5, '😌':1, '🤔':0, '😤':-0.5, '😔':-1, '🥱':-0.5, '😰':-1.5 };
+        const MOODS = ['🤩','🥰','😊','💪','😌','🌱','🤔','😶','😤','😔','😢','🥱','🤯','😰'];
+        const MOOD_LABELS = { '🤩':'amazing','🥰':'grateful','😊':'good','💪':'energized','😌':'calm','🌱':'hopeful','🤔':'unsure','😶':'numb','😤':'frustrated','😔':'low','😢':'sad','🥱':'tired','🤯':'overwhelmed','😰':'anxious' };
+        const MOOD_SCORES = { '🤩':2,'🥰':1.8,'😊':1.5,'💪':1.5,'😌':1,'🌱':0.5,'🤔':0,'😶':-0.3,'😤':-0.5,'😔':-1,'😢':-1.2,'🥱':-0.5,'🤯':-1,'😰':-1.5 };
         const POS_WORDS = ['good','great','amazing','wonderful','happy','love','grateful','blessed','thankful','excited','joy','peaceful','calm','proud','inspired','motivated','content','awesome','fantastic','lucky','energized'];
         const NEG_WORDS = ['bad','terrible','sad','stressed','tired','anxious','worried','afraid','angry','frustrated','exhausted','overwhelmed','depressed','lonely','sick','hard','difficult','fail','missed','lost','empty'];
         let moodDropdownOpen = false;
@@ -3576,6 +3584,46 @@
             renderCalendar();
         }
 
+        function generateInsight(scores) {
+            const valid = scores.filter(s => s !== null);
+            if (valid.length === 0) return { vibe: 'tap a day to edit · no entries yet', coach: null };
+
+            const recent = valid.slice(-5);
+            const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+
+            // trend: compare early half vs late half
+            let trend = 0;
+            if (recent.length >= 3) {
+                const mid = Math.floor(recent.length / 2);
+                const earlyAvg = recent.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+                const late = recent.slice(recent.length - mid);
+                const lateAvg  = late.reduce((a, b) => a + b, 0) / late.length;
+                trend = lateAvg - earlyAvg;
+            }
+
+            // volatility: mean swing between consecutive days
+            let vol = 0;
+            for (let i = 1; i < recent.length; i++) vol += Math.abs(recent[i] - recent[i-1]);
+            if (recent.length > 1) vol /= (recent.length - 1);
+
+            const rising   = trend > 0.6;
+            const falling  = trend < -0.6;
+            const volatile = vol > 1.1 && !rising && !falling;
+            const high     = avg > 1;
+            const low      = avg < -0.5;
+
+            if (rising && low)   return { vibe: 'tough stretch — but you\'re trending up ↑',  coach: 'one step at a time. you\'re already moving.' };
+            if (rising && high)  return { vibe: 'you\'re in a strong flow ↑',                  coach: 'keep it going — something\'s clearly working.' };
+            if (rising)          return { vibe: 'energy on the rise ↑',                         coach: 'notice what\'s working. do more of that.' };
+            if (falling && high) return { vibe: 'coming down from a high stretch',              coach: 'rest is part of the rhythm. protect your energy.' };
+            if (falling && low)  return { vibe: 'a rough few days ↓',                           coach: 'be gentle with yourself. this won\'t last.' };
+            if (falling)         return { vibe: 'energy dipping this week ↓',                   coach: 'what\'s draining you? small shifts add up.' };
+            if (volatile)        return { vibe: 'an up-and-down week',                           coach: 'big swings are exhausting. what brings you steadiness?' };
+            if (high)            return { vibe: 'a solid, positive stretch ✨',                   coach: 'you\'re doing well. notice what\'s contributing.' };
+            if (low)             return { vibe: 'a challenging stretch',                          coach: 'you\'re carrying something heavy. that\'s okay — it passes.' };
+            return                       { vibe: 'a steady, balanced week',                       coach: 'consistency is underrated. you\'re showing up.' };
+        }
+
         function renderTrend() {
             const DAYS_SHORT = ['su','mo','tu','we','th','fr','sa'];
             const DAYS_FULL  = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
@@ -3616,17 +3664,9 @@
                 editRow.innerHTML = '';
             }
 
-            const valid = scores.filter(s => s !== null);
-            let vibeText = 'tap a day to edit · no entries yet';
-            if (valid.length > 0) {
-                const avg = valid.reduce((a,b) => a+b, 0) / valid.length;
-                if (avg > 1.2)  vibeText = 'you had a wonderful week ✨';
-                else if (avg > 0.3)  vibeText = 'solid week overall 👍';
-                else if (avg > -0.3) vibeText = 'a balanced, mixed week';
-                else if (avg > -1)   vibeText = 'a challenging week — be gentle with yourself';
-                else                 vibeText = 'rough stretch — things will shift 💙';
-            }
-            document.getElementById('feelVibe').textContent = vibeText;
+            const insight = generateInsight(scores);
+            document.getElementById('feelVibe').textContent = insight.vibe;
+            document.getElementById('feelCoach').textContent = insight.coach || '';
         }
 
         function renderCalendar() {
