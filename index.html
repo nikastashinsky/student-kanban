@@ -1784,11 +1784,111 @@
         .column-header[contenteditable] { cursor: text; outline: none; border-radius: 3px; }
         .column-header[contenteditable]:focus { background: rgba(0,0,0,0.05); padding-inline: 4px; }
         body.dark .column-header[contenteditable]:focus { background: rgba(255,255,255,0.06); }
+
+        /* ── Frog Lounge ── */
+        .frog-btn {
+            position: fixed; top: 20px; left: 20px; z-index: 495;
+            width: 40px; height: 40px; border-radius: 50%;
+            border: 1.5px solid #d4cfc9; background: #fff;
+            cursor: pointer; font-size: 18px; display: flex;
+            align-items: center; justify-content: center;
+            touch-action: manipulation;
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .frog-btn:hover { transform: scale(1.1); box-shadow: 0 2px 8px rgba(0,0,0,0.14); }
+
+        #frogLounge {
+            position: fixed; inset: 0; z-index: 490; display: none; overflow: hidden;
+            background-color: #e8f0e0;
+            background-image: radial-gradient(circle, #7aab6a 1.2px, transparent 1.2px);
+            background-size: 24px 24px;
+        }
+        #frogLounge.open { display: block; }
+
+        #loungeCanvas {
+            position: absolute; inset: 0; z-index: 1; pointer-events: none;
+        }
+
+        #loungeScene { position: absolute; inset: 0; z-index: 2; }
+
+        .lounge-emoji {
+            position: absolute; font-size: 2.2rem; cursor: grab;
+            user-select: none; z-index: 10; line-height: 1;
+            transition: left 0.55s cubic-bezier(0.34, 1.4, 0.64, 1),
+                        top  0.55s cubic-bezier(0.34, 1.4, 0.64, 1);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+        }
+        .lounge-emoji:active { cursor: grabbing; }
+        .lounge-emoji.hopping { animation: frog-hop 0.45s ease-out; }
+        @keyframes frog-hop {
+            0%   { transform: scale(1)    translateY(0);    }
+            38%  { transform: scale(1.35) translateY(-14px); }
+            65%  { transform: scale(0.88) translateY(3px);  }
+            100% { transform: scale(1)    translateY(0);    }
+        }
+
+        .lounge-bubble {
+            position: absolute; background: rgba(255,255,255,0.92);
+            border: 1.5px solid #8abc78; border-radius: 14px;
+            padding: 4px 11px; font-size: 0.9rem;
+            font-family: 'Caveat', cursive; color: #3d6e2d;
+            pointer-events: none; z-index: 20; white-space: nowrap;
+            animation: bubble-float 1.5s ease-out forwards;
+        }
+        @keyframes bubble-float {
+            0%   { opacity: 0; transform: translateY(0)    scale(0.75); }
+            18%  { opacity: 1; transform: translateY(-8px) scale(1);    }
+            72%  { opacity: 1; transform: translateY(-22px) scale(1);   }
+            100% { opacity: 0; transform: translateY(-32px) scale(0.9); }
+        }
+
+        .lounge-note {
+            position: absolute; font-size: 1.15rem; pointer-events: none;
+            z-index: 20; animation: note-float 2.2s ease-out forwards;
+            font-family: 'Caveat', cursive; color: #4a7c38;
+        }
+        @keyframes note-float {
+            0%   { opacity: 0; transform: translateY(0)    rotate(-8deg);  }
+            15%  { opacity: 1; transform: translateY(-6px) rotate(0deg);   }
+            100% { opacity: 0; transform: translateY(-55px) rotate(18deg); }
+        }
+
+        .lounge-dove {
+            position: absolute; font-size: 2rem;
+            z-index: 15; pointer-events: none;
+        }
+
+        .lounge-controls {
+            position: absolute; bottom: 22px; left: 20px; z-index: 40;
+            display: flex; flex-direction: column; gap: 7px;
+        }
+        .lounge-ctrl-btn {
+            padding: 6px 16px; background: rgba(255,255,255,0.82);
+            border: 1.5px solid #8abc78; border-radius: 20px;
+            font-family: 'Caveat', cursive; font-size: 15px;
+            color: #3d6e2d; cursor: pointer;
+            backdrop-filter: blur(6px);
+            transition: background 0.15s, transform 0.1s;
+            white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .lounge-ctrl-btn:hover { background: rgba(255,255,255,0.97); transform: scale(1.02); }
     </style>
 </head>
 <body>
 
     <canvas id="doodleCanvas"></canvas>
+
+    <!-- Frog Lounge -->
+    <button class="frog-btn" onclick="toggleFrogLounge()" title="frog lounge">🐸</button>
+    <div id="frogLounge">
+        <canvas id="loungeCanvas"></canvas>
+        <div id="loungeScene"></div>
+        <div class="lounge-controls">
+            <button class="lounge-ctrl-btn" onclick="clearScene()">🌿 reset scene</button>
+            <button class="lounge-ctrl-btn" onclick="clearLoungeDoodles()">✏️ clear doodles</button>
+        </div>
+    </div>
 
     <div class="header">
         <h1 id="siteTitle" contenteditable="true" spellcheck="false" data-placeholder="name your space"
@@ -2042,6 +2142,7 @@
             loadSettings();
             loadDailyData();
             initDoodle();
+            initLoungeMouseHandlers();
             const allEmpty = getActiveCols().every(c => !cards[c]?.length) && !cards.archived.length;
             if (allEmpty) loadSampleData();
             renderBoardTabs();
@@ -3526,6 +3627,7 @@
             // Use e.buttons (bitmask) on every mousemove — no mousedown state needed.
             // Left button held = e.buttons === 1.
             window.addEventListener('mousemove', e => {
+                if (loungeActive) { doodle.lastX = null; return; }
                 if (e.buttons !== 1) {
                     doodle.lastX = null;
                     return;
@@ -3570,6 +3672,257 @@
                 });
                 requestAnimationFrame(render);
             })();
+        }
+
+        // ── Frog Lounge ───────────────────────────────────────────────────
+
+        let loungeActive    = false;
+        let loungeTimers    = [];
+        let loungeStrokes   = [];
+        let loungeDragging  = null;
+        let loungeDragOffX  = 0, loungeDragOffY = 0;
+        let loungeDragMoved = false;
+        let loungeCtx       = null;
+        let loungeLastX     = null, loungeLastY = null;
+
+        const LOUNGE_DEFAULTS = [
+            { type:'frog',   emoji:'🐸', xp:0.18, yp:0.62 },
+            { type:'frog',   emoji:'🐸', xp:0.47, yp:0.70 },
+            { type:'frog',   emoji:'🐸', xp:0.74, yp:0.58 },
+            { type:'parrot', emoji:'🦜', xp:0.12, yp:0.28, size:'2.6rem' },
+            { type:'palm',   emoji:'🌴', xp:0.06, yp:0.12, size:'3.4rem' },
+            { type:'plant',  emoji:'🌱', xp:0.32, yp:0.78 },
+            { type:'plant',  emoji:'🌱', xp:0.58, yp:0.82 },
+            { type:'plant',  emoji:'🌱', xp:0.88, yp:0.74 },
+            { type:'shroom', emoji:'🍄', xp:0.50, yp:0.54 },
+            { type:'shroom', emoji:'🍄', xp:0.80, yp:0.46 },
+        ];
+
+        function toggleFrogLounge() {
+            loungeActive = !loungeActive;
+            document.getElementById('frogLounge').classList.toggle('open', loungeActive);
+            if (loungeActive) {
+                initLoungeCanvas();
+                clearScene();
+                startDoveFlyby();
+            } else {
+                loungeTimers.forEach(clearTimeout);
+                loungeTimers = [];
+            }
+        }
+
+        function initLoungeCanvas() {
+            const canvas = document.getElementById('loungeCanvas');
+            canvas.width  = window.innerWidth;
+            canvas.height = window.innerHeight;
+            loungeCtx = canvas.getContext('2d');
+            loungeCtx.lineCap  = 'round';
+            loungeCtx.lineJoin = 'round';
+            (function renderLoop() {
+                if (!loungeCtx) return;
+                loungeCtx.clearRect(0, 0, canvas.width, canvas.height);
+                loungeStrokes.forEach(s => {
+                    loungeCtx.beginPath();
+                    loungeCtx.moveTo(s.x1, s.y1);
+                    loungeCtx.lineTo(s.x2, s.y2);
+                    loungeCtx.strokeStyle = 'rgba(58, 100, 40, 0.55)';
+                    loungeCtx.lineWidth = 2.5;
+                    loungeCtx.stroke();
+                });
+                requestAnimationFrame(renderLoop);
+            })();
+        }
+
+        function clearLoungeDoodles() { loungeStrokes = []; }
+
+        function clearScene() {
+            const scene = document.getElementById('loungeScene');
+            scene.innerHTML = '';
+            // stop frog/parrot timers (dove keeps running)
+            loungeTimers = loungeTimers.filter(t => {
+                clearTimeout(t); return false;
+            });
+            const W = window.innerWidth, H = window.innerHeight;
+            LOUNGE_DEFAULTS.forEach(d => {
+                const el = createLoungeEmoji(d);
+                el.style.left = Math.round(d.xp * W) + 'px';
+                el.style.top  = Math.round(d.yp * H) + 'px';
+                if (d.size) el.style.fontSize = d.size;
+                scene.appendChild(el);
+            });
+            startFrogHops();
+            startParrotSinging();
+        }
+
+        function createLoungeEmoji(d) {
+            const el = document.createElement('div');
+            el.className = 'lounge-emoji';
+            el.textContent = d.emoji;
+            el.dataset.type = d.type;
+            attachLoungeListeners(el);
+            return el;
+        }
+
+        function attachLoungeListeners(el) {
+            el.addEventListener('mousedown', e => {
+                loungeDragging  = el;
+                loungeDragMoved = false;
+                loungeDragOffX  = e.clientX - parseInt(el.style.left || 0);
+                loungeDragOffY  = e.clientY - parseInt(el.style.top  || 0);
+                el.style.transition = 'none';
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            el.addEventListener('click', e => {
+                if (loungeDragMoved) return;
+                if (el.dataset.type === 'frog') frogCroak(el);
+            });
+            el.addEventListener('dblclick', e => {
+                e.stopPropagation();
+                const clone = document.createElement('div');
+                clone.className   = 'lounge-emoji';
+                clone.textContent = el.textContent;
+                clone.dataset.type = el.dataset.type;
+                clone.style.left      = (parseInt(el.style.left) + 35) + 'px';
+                clone.style.top       = (parseInt(el.style.top)  + 20) + 'px';
+                clone.style.fontSize  = el.style.fontSize;
+                clone.style.transition = 'none';
+                attachLoungeListeners(clone);
+                document.getElementById('loungeScene').appendChild(clone);
+                if (clone.dataset.type === 'frog') startFrogHop(clone);
+            });
+        }
+
+        // Global lounge mouse handlers (added once in init)
+        function initLoungeMouseHandlers() {
+            window.addEventListener('mousemove', e => {
+                if (loungeDragging) {
+                    loungeDragMoved = true;
+                    loungeDragging.style.left = (e.clientX - loungeDragOffX) + 'px';
+                    loungeDragging.style.top  = (e.clientY - loungeDragOffY) + 'px';
+                    return;
+                }
+                if (!loungeActive || e.buttons !== 1) { loungeLastX = null; return; }
+                if (e.target.closest('.lounge-emoji, .lounge-controls, .lounge-ctrl-btn, .frog-btn')) {
+                    loungeLastX = null; return;
+                }
+                if (loungeLastX !== null) {
+                    loungeStrokes.push({ x1: loungeLastX, y1: loungeLastY, x2: e.clientX, y2: e.clientY });
+                }
+                loungeLastX = e.clientX;
+                loungeLastY = e.clientY;
+            });
+            window.addEventListener('mouseup', () => {
+                if (loungeDragging) {
+                    loungeDragging.style.transition = '';
+                    loungeDragging = null;
+                }
+                loungeLastX = null;
+            });
+        }
+
+        function frogCroak(el) {
+            // quick excited hop
+            const W = window.innerWidth, H = window.innerHeight;
+            const cx = parseInt(el.style.left), cy = parseInt(el.style.top);
+            el.style.transition = '';
+            el.style.left = Math.max(10, Math.min(W - 50, cx + (Math.random() - 0.5) * 60)) + 'px';
+            el.style.top  = Math.max(10, Math.min(H - 50, cy + (Math.random() - 0.5) * 40)) + 'px';
+            el.classList.remove('hopping');
+            void el.offsetWidth;
+            el.classList.add('hopping');
+            setTimeout(() => el.classList.remove('hopping'), 450);
+            // speech bubble
+            const words = ['ribbit!', 'croak!', 'ribbit~', '*croak*', 'brrrrp!'];
+            const bubble = document.createElement('div');
+            bubble.className   = 'lounge-bubble';
+            bubble.textContent = words[Math.floor(Math.random() * words.length)];
+            bubble.style.left  = (parseInt(el.style.left) - 8) + 'px';
+            bubble.style.top   = (parseInt(el.style.top) - 44) + 'px';
+            document.getElementById('loungeScene').appendChild(bubble);
+            setTimeout(() => bubble.remove(), 1500);
+        }
+
+        function startFrogHop(frogEl) {
+            const delay = 2200 + Math.random() * 5500;
+            const t = setTimeout(() => {
+                if (!loungeActive) return;
+                if (!document.getElementById('loungeScene')?.contains(frogEl)) return;
+                const W = window.innerWidth, H = window.innerHeight;
+                const x = parseInt(frogEl.style.left), y = parseInt(frogEl.style.top);
+                frogEl.style.transition = '';
+                frogEl.style.left = Math.max(10, Math.min(W - 55, x + (Math.random() - 0.5) * 160)) + 'px';
+                frogEl.style.top  = Math.max(10, Math.min(H - 55, y + (Math.random() - 0.5) * 110)) + 'px';
+                frogEl.classList.remove('hopping');
+                void frogEl.offsetWidth;
+                frogEl.classList.add('hopping');
+                setTimeout(() => frogEl.classList.remove('hopping'), 450);
+                startFrogHop(frogEl);
+            }, delay);
+            loungeTimers.push(t);
+        }
+
+        function startFrogHops() {
+            document.querySelectorAll('#loungeScene .lounge-emoji[data-type="frog"]').forEach(f => {
+                startFrogHop(f);
+            });
+        }
+
+        function startParrotSinging() {
+            function sing() {
+                if (!loungeActive) return;
+                const parrot = document.querySelector('#loungeScene .lounge-emoji[data-type="parrot"]');
+                if (parrot) {
+                    const notes = ['♪', '♫', '♩', '♬'];
+                    const note = document.createElement('div');
+                    note.className   = 'lounge-note';
+                    note.textContent = notes[Math.floor(Math.random() * notes.length)];
+                    note.style.left  = (parseInt(parrot.style.left) + 22 + Math.random() * 14) + 'px';
+                    note.style.top   = (parseInt(parrot.style.top)  - 8) + 'px';
+                    document.getElementById('loungeScene').appendChild(note);
+                    setTimeout(() => note.remove(), 2200);
+                }
+                const t = setTimeout(sing, 2200 + Math.random() * 3000);
+                loungeTimers.push(t);
+            }
+            const t = setTimeout(sing, 1200);
+            loungeTimers.push(t);
+        }
+
+        function startDoveFlyby() {
+            const t = setTimeout(function doFly() {
+                if (!loungeActive) return;
+                const fromLeft = Math.random() > 0.5;
+                const startY   = 50 + Math.random() * (window.innerHeight * 0.38);
+                const dove     = document.createElement('div');
+                dove.className = 'lounge-dove';
+                dove.textContent = '🕊️';
+                dove.style.top   = startY + 'px';
+                dove.style.left  = (fromLeft ? -70 : window.innerWidth + 20) + 'px';
+                dove.style.transform = fromLeft ? 'scaleX(1)' : 'scaleX(-1)';
+                document.getElementById('frogLounge').appendChild(dove);
+
+                const startX   = fromLeft ? -70 : window.innerWidth + 20;
+                const endX     = fromLeft ? window.innerWidth + 70 : -70;
+                const dur      = 9000 + Math.random() * 3000;
+                const t0       = Date.now();
+
+                (function animateDove() {
+                    if (!loungeActive) { dove.remove(); return; }
+                    const p = (Date.now() - t0) / dur;
+                    if (p >= 1) { dove.remove(); return; }
+                    const x   = startX + (endX - startX) * p;
+                    const arc = Math.sin(p * Math.PI) * -28;
+                    const bob = Math.sin(p * Math.PI * 18) * 3.5;
+                    dove.style.left = x + 'px';
+                    dove.style.top  = (startY + arc + bob) + 'px';
+                    requestAnimationFrame(animateDove);
+                })();
+
+                const next = setTimeout(doFly, 5 * 60 * 1000);
+                loungeTimers.push(next);
+            }, 35000);
+            loungeTimers.push(t);
         }
 
         // ── PWA ───────────────────────────────────────────────────────────
