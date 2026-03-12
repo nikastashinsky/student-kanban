@@ -1984,6 +1984,23 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.09);
         }
         .lounge-info-btn:hover .lounge-info-tip { display: block; }
+        .lounge-cfg-btn {
+            width: 26px; height: 26px; flex-shrink: 0;
+            background: rgba(255,255,255,0.82); border: 1.5px solid #8abc78;
+            border-radius: 50%; font-size: 13px; color: #3d6e2d;
+            cursor: pointer; backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+            position: relative; transition: background 0.15s;
+            user-select: none;
+        }
+        .lounge-cfg-btn:hover { background: rgba(255,255,255,0.97); }
+        .lounge-cfg-panel {
+            position: absolute; left: 34px; top: 0;
+            display: none; flex-direction: column; gap: 6px;
+            white-space: nowrap;
+        }
+        .lounge-cfg-panel.open { display: flex; }
+        .lounge-audio-btn.muted { opacity: 0.5; }
     </style>
 </head>
 <body>
@@ -2003,8 +2020,13 @@
                     Drag anything around. Double-click to duplicate. Doodle.
                 </div>
             </div>
-            <button class="lounge-ctrl-btn" onclick="clearScene()">reset oasis</button>
-            <button class="lounge-ctrl-btn" onclick="clearLoungeDoodles()">clear doodles</button>
+            <div class="lounge-cfg-btn" onclick="toggleLoungeConfig(event)">⚙
+                <div class="lounge-cfg-panel" id="loungeCfgPanel">
+                    <button class="lounge-ctrl-btn" onclick="clearScene(); closeLoungeConfig()">reset oasis</button>
+                    <button class="lounge-ctrl-btn" onclick="clearLoungeDoodles(); closeLoungeConfig()">clear doodles</button>
+                    <button class="lounge-ctrl-btn lounge-audio-btn" id="loungeAudioBtn" onclick="toggleLoungeAudio()">♪ on</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -3881,7 +3903,11 @@
         let loungeActive    = false;
         let loungeDrawing   = false;
         let loungeRaining   = false;
+        let loungeIsNight   = false;
+        let loungeCfgOpen   = false;
         let loungeTimers    = [];
+        let _audioCtx       = null;
+        let audioMuted      = false;
         let parrotHopTimer  = null;
         let loungeStrokes   = [];
         let loungeDragging   = null;
@@ -3899,6 +3925,7 @@
             // parrot positioned relative to palm-left: right branch at top of palm emoji
             { type:'parrot', emoji:'🦜', relTo:'palm-left', xoff:42, yoff:-22, size:'1.8rem' },
             { type:'palm',   emoji:'🌴', xp:0.86, yp:0.55, size:'4.4rem' },
+            { type:'cricket', emoji:'🦗', xp:0.83, yp:0.72, nightOnly:true },
         ];
 
         function toggleFrogLounge() {
@@ -3948,7 +3975,9 @@
             });
             const W = window.innerWidth, H = window.innerHeight;
             const placed = {};
+            loungeIsNight = isNighttime();
             LOUNGE_DEFAULTS.forEach(d => {
+                if (d.nightOnly && !loungeIsNight) return;
                 const el = createLoungeEmoji(d);
                 if (d.size) el.style.fontSize = d.size;
                 let x, y;
@@ -3999,8 +4028,9 @@
             });
             el.addEventListener('click', e => {
                 if (loungeDragMoved) return;
-                if (el.dataset.type === 'frog')   frogCroak(el);
-                if (el.dataset.type === 'parrot') parrotFlutter(el);
+                if (el.dataset.type === 'frog')    frogCroak(el);
+                if (el.dataset.type === 'parrot')  parrotFlutter(el);
+                if (el.dataset.type === 'cricket') cricketChirp(el);
             });
             el.addEventListener('dblclick', e => {
                 e.stopPropagation();
@@ -4023,9 +4053,14 @@
         function initLoungeMouseHandlers() {
             const lounge = document.getElementById('frogLounge');
 
+            // Close config panel on background click
+            lounge.addEventListener('click', e => {
+                if (loungeCfgOpen && !e.target.closest('.lounge-cfg-btn')) closeLoungeConfig();
+            });
+
             // Start a stroke on mousedown (only on background, not interactive elements)
             lounge.addEventListener('mousedown', e => {
-                if (e.target.closest('.lounge-emoji, .lounge-controls, .lounge-ctrl-btn, .frog-btn')) return;
+                if (e.target.closest('.lounge-emoji, .lounge-controls, .lounge-ctrl-btn, .lounge-cfg-btn, .frog-btn')) return;
                 loungeDrawing = true;
                 loungeLastX   = e.clientX;
                 loungeLastY   = e.clientY;
@@ -4098,6 +4133,7 @@
         }
 
         function parrotFlutter(el) {
+            playParrotSound();
             el.classList.remove('fluttering');
             void el.offsetWidth;
             el.classList.add('fluttering');
@@ -4113,6 +4149,7 @@
         }
 
         function frogCroak(el) {
+            playFrogSound();
             // quick excited hop
             const W = window.innerWidth, H = window.innerHeight;
             const cx = parseInt(el.style.left), cy = parseInt(el.style.top);
@@ -4183,6 +4220,102 @@
             loungeTimers.push(t);
         }
 
+        // ── Audio ─────────────────────────────────────────────────────────────
+
+        function getAudioCtx() {
+            if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (_audioCtx.state === 'suspended') _audioCtx.resume();
+            return _audioCtx;
+        }
+
+        function _tone(freq, type, t, dur, vol, ctx) {
+            const osc = ctx.createOscillator(), g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.type = type;
+            if (Array.isArray(freq)) {
+                osc.frequency.setValueAtTime(freq[0], t);
+                osc.frequency.exponentialRampToValueAtTime(freq[1], t + dur);
+            } else {
+                osc.frequency.setValueAtTime(freq, t);
+            }
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(vol, t + 0.012);
+            g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            osc.start(t); osc.stop(t + dur + 0.01);
+        }
+
+        function playFrogSound() {
+            if (audioMuted) return;
+            try {
+                const ctx = getAudioCtx(), now = ctx.currentTime;
+                const v = Math.floor(Math.random() * 3);
+                if (v === 0) {
+                    _tone([130, 72], 'sawtooth', now, 0.22, 0.28, ctx);
+                } else if (v === 1) {
+                    _tone([265, 175], 'square', now,        0.1, 0.18, ctx);
+                    _tone([265, 175], 'square', now + 0.13, 0.1, 0.18, ctx);
+                } else {
+                    for (let i = 0; i < 3; i++) _tone([110, 82], 'sawtooth', now + i * 0.075, 0.08, 0.2, ctx);
+                }
+            } catch(e) {}
+        }
+
+        const PARROT_MELODIES = [
+            [[900,1200],[1100,1400],[1300,1050]],
+            [[1400,1000],[1200,880],[1000,780]],
+            [[800,1050],[1050,1300],[1300,1500],[1500,1200]],
+            [[1200,1200],[900,900],[1500,1300],[1100,1100]],
+        ];
+
+        function playParrotSound() {
+            if (audioMuted) return;
+            try {
+                const ctx = getAudioCtx(), now = ctx.currentTime;
+                const m = PARROT_MELODIES[Math.floor(Math.random() * PARROT_MELODIES.length)];
+                m.forEach(([f1,f2], i) => _tone([f1,f2], 'triangle', now + i * 0.1, 0.09, 0.17, ctx));
+            } catch(e) {}
+        }
+
+        function playCricketSound() {
+            if (audioMuted) return;
+            try {
+                const ctx = getAudioCtx(), now = ctx.currentTime;
+                for (let i = 0; i < 7; i++) {
+                    _tone(4600 + Math.random() * 500, 'square', now + i * 0.048, 0.036, 0.07, ctx);
+                }
+            } catch(e) {}
+        }
+
+        function cricketChirp(el) {
+            playCricketSound();
+            el.classList.remove('hopping');
+            void el.offsetWidth;
+            el.classList.add('hopping');
+            setTimeout(() => el.classList.remove('hopping'), 450);
+        }
+
+        // ── Config panel ───────────────────────────────────────────────────────
+
+        function toggleLoungeConfig(e) {
+            e.stopPropagation();
+            loungeCfgOpen = !loungeCfgOpen;
+            document.getElementById('loungeCfgPanel').classList.toggle('open', loungeCfgOpen);
+        }
+
+        function closeLoungeConfig() {
+            loungeCfgOpen = false;
+            document.getElementById('loungeCfgPanel')?.classList.remove('open');
+        }
+
+        function toggleLoungeAudio() {
+            audioMuted = !audioMuted;
+            const btn = document.getElementById('loungeAudioBtn');
+            if (btn) {
+                btn.textContent = audioMuted ? '♪ off' : '♪ on';
+                btn.classList.toggle('muted', audioMuted);
+            }
+        }
+
         // ── Day / Night ──────────────────────────────────────────────────────
 
         function isNighttime() {
@@ -4195,6 +4328,30 @@
             const el = document.getElementById('loungeSkyBody');
             if (el) el.textContent = night ? '🌕' : '☀️';
             document.getElementById('frogLounge')?.classList.toggle('night', night);
+            if (night !== loungeIsNight) {
+                if (night) addNightCreatures();
+                else removeNightCreatures();
+                loungeIsNight = night;
+            }
+        }
+
+        function addNightCreatures() {
+            const scene = document.getElementById('loungeScene');
+            if (!scene) return;
+            const W = window.innerWidth, H = window.innerHeight;
+            LOUNGE_DEFAULTS.filter(d => d.nightOnly).forEach(d => {
+                if (scene.querySelector(`.lounge-emoji[data-type="${d.type}"]`)) return;
+                const el = createLoungeEmoji(d);
+                if (d.size) el.style.fontSize = d.size;
+                el.style.left = Math.round(d.xp * W) + 'px';
+                el.style.top  = Math.round(d.yp * H) + 'px';
+                scene.appendChild(el);
+            });
+        }
+
+        function removeNightCreatures() {
+            document.querySelectorAll('#loungeScene .lounge-emoji[data-type="cricket"]')
+                .forEach(e => e.remove());
         }
 
         function startSkyUpdateLoop() {
