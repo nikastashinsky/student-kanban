@@ -4242,10 +4242,10 @@
                     if (!loungeActive) return;
                     triggerRain();
                     schedule();
-                }, 6 * 60 * 1000);
+                }, 2 * 60 * 1000);
                 loungeTimers.push(t);
             }
-            // first rain ~30s after opening so it's visible, then every 6 min
+            // first rain ~30s after opening
             const first = setTimeout(() => {
                 if (!loungeActive) return;
                 triggerRain();
