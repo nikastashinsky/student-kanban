@@ -1824,8 +1824,13 @@
             background-color: #e8f0e0;
             background-image: radial-gradient(circle, #7aab6a 1.2px, transparent 1.2px);
             background-size: 24px 24px;
+            transition: background-color 2s;
         }
         #frogLounge.open { display: block; }
+        #frogLounge.night {
+            background-color: #747870;
+            background-image: radial-gradient(circle, #3d5535 1.2px, transparent 1.2px);
+        }
 
         #loungeCanvas {
             position: absolute; inset: 0; z-index: 1; pointer-events: none;
@@ -4184,8 +4189,10 @@
         }
 
         function updateSkyBody() {
+            const night = isNighttime();
             const el = document.getElementById('loungeSkyBody');
-            if (el) el.textContent = isNighttime() ? '🌕' : '☀️';
+            if (el) el.textContent = night ? '🌕' : '☀️';
+            document.getElementById('frogLounge')?.classList.toggle('night', night);
         }
 
         function startSkyUpdateLoop() {
