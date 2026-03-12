@@ -1904,6 +1904,45 @@
             position: absolute; font-size: 2rem;
             z-index: 15; pointer-events: none;
         }
+        .lounge-sky-body {
+            position: absolute; top: 16px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem; z-index: 8; pointer-events: none;
+            user-select: none; transition: opacity 1.5s;
+        }
+        .lounge-rain-drop {
+            position: absolute; font-size: 0.78rem;
+            pointer-events: none; z-index: 12;
+            animation: rain-fall var(--fall-dur, 0.8s) linear forwards;
+        }
+        @keyframes rain-fall {
+            0%   { transform: translateY(-10px) rotate(-12deg); opacity: 0; }
+            12%  { opacity: 0.72; }
+            88%  { opacity: 0.55; }
+            100% { transform: translateY(105vh) rotate(-12deg); opacity: 0; }
+        }
+        .lounge-shooting-star {
+            position: absolute; font-size: 1rem;
+            pointer-events: none; z-index: 18;
+        }
+        .lounge-zzz {
+            position: absolute; font-family: 'Caveat', cursive;
+            font-size: 0.9rem; color: #7aabbd;
+            pointer-events: none; z-index: 20;
+            animation: zzz-float 2.5s ease-out forwards;
+        }
+        @keyframes zzz-float {
+            0%   { transform: translateY(0) scale(0.75); opacity: 0; }
+            20%  { opacity: 1; }
+            100% { transform: translateY(-34px) scale(1.05); opacity: 0; }
+        }
+        .lounge-emoji.parrot-sleep {
+            animation: parrot-sway 4s ease-in-out infinite !important;
+        }
+        @keyframes parrot-sway {
+            0%, 100% { transform: rotate(-7deg); }
+            50%       { transform: rotate(7deg); }
+        }
 
         .lounge-controls {
             position: absolute; bottom: 22px; left: 20px; z-index: 40;
@@ -1948,6 +1987,7 @@
     <button class="frog-btn" onclick="toggleFrogLounge()" title="frog lounge">🐸</button>
     <div id="frogLounge">
         <canvas id="loungeCanvas"></canvas>
+        <div id="loungeSkyBody" class="lounge-sky-body"></div>
         <div id="loungeScene"></div>
         <div class="lounge-controls">
             <div class="lounge-info-btn">ⓘ
@@ -3833,6 +3873,7 @@
 
         let loungeActive    = false;
         let loungeDrawing   = false;
+        let loungeRaining   = false;
         let loungeTimers    = [];
         let parrotHopTimer  = null;
         let loungeStrokes   = [];
@@ -3860,6 +3901,7 @@
                 initLoungeCanvas();
                 clearScene();
                 startDoveFlyby();
+                updateSkyBody();
             } else {
                 loungeTimers.forEach(clearTimeout);
                 loungeTimers = [];
@@ -3920,6 +3962,11 @@
             startParrotSinging();
             const parrotEl = document.querySelector('#loungeScene .lounge-emoji[data-type="parrot"]');
             if (parrotEl) startParrotIdleHop(parrotEl);
+            loungeRaining = false;
+            startRainCycle();
+            startShootingStarCycle();
+            startSkyUpdateLoop();
+            updateSkyBody();
         }
 
         function createLoungeEmoji(d) {
@@ -4009,6 +4056,16 @@
             function hop() {
                 if (!loungeActive || !document.getElementById('loungeScene')?.contains(parrotEl)) return;
                 if (loungeDragging === parrotEl) { parrotEl._hopTimer = setTimeout(hop, 300); return; }
+
+                if (isNighttime()) {
+                    parrotEl.classList.remove('parrot-hop', 'parrot-double-hop');
+                    parrotEl.classList.add('parrot-sleep');
+                    if (Math.random() > 0.5) emitZzz(parrotEl);
+                    parrotEl._hopTimer = setTimeout(hop, 2800 + Math.random() * 3500);
+                    return;
+                }
+
+                parrotEl.classList.remove('parrot-sleep');
                 const isDouble = Math.random() > 0.5;
                 const cls      = isDouble ? 'parrot-double-hop' : 'parrot-hop';
                 const dur      = isDouble ? 620 : 400;
@@ -4019,6 +4076,18 @@
                 parrotEl._hopTimer = setTimeout(hop, 1800 + Math.random() * 3200);
             }
             parrotEl._hopTimer = setTimeout(hop, 700 + Math.random() * 1000);
+        }
+
+        function emitZzz(parrotEl) {
+            const scene = document.getElementById('loungeScene');
+            if (!scene) return;
+            const zEl = document.createElement('div');
+            zEl.className   = 'lounge-zzz';
+            zEl.textContent = ['z', 'zz', 'zzz'][Math.floor(Math.random() * 3)];
+            zEl.style.left  = (parseInt(parrotEl.style.left) + 20 + Math.random() * 10) + 'px';
+            zEl.style.top   = (parseInt(parrotEl.style.top)  - 8) + 'px';
+            scene.appendChild(zEl);
+            setTimeout(() => zEl.remove(), 2500);
         }
 
         function parrotFlutter(el) {
@@ -4086,17 +4155,19 @@
         function startParrotSinging() {
             function sing() {
                 if (!loungeActive) return;
-                const parrots = [...document.querySelectorAll('#loungeScene .lounge-emoji[data-type="parrot"]')];
-                const parrot  = parrots[Math.floor(Math.random() * parrots.length)];
-                if (parrot) {
-                    const notes = ['♪', '♫', '♩', '♬'];
-                    const note = document.createElement('div');
-                    note.className   = 'lounge-note';
-                    note.textContent = notes[Math.floor(Math.random() * notes.length)];
-                    note.style.left  = (parseInt(parrot.style.left) + 22 + Math.random() * 14) + 'px';
-                    note.style.top   = (parseInt(parrot.style.top)  - 8) + 'px';
-                    document.getElementById('loungeScene').appendChild(note);
-                    setTimeout(() => note.remove(), 2200);
+                if (!isNighttime()) {
+                    const parrots = [...document.querySelectorAll('#loungeScene .lounge-emoji[data-type="parrot"]')];
+                    const parrot  = parrots[Math.floor(Math.random() * parrots.length)];
+                    if (parrot) {
+                        const notes = ['♪', '♫', '♩', '♬'];
+                        const note = document.createElement('div');
+                        note.className   = 'lounge-note';
+                        note.textContent = notes[Math.floor(Math.random() * notes.length)];
+                        note.style.left  = (parseInt(parrot.style.left) + 22 + Math.random() * 14) + 'px';
+                        note.style.top   = (parseInt(parrot.style.top)  - 8) + 'px';
+                        document.getElementById('loungeScene').appendChild(note);
+                        setTimeout(() => note.remove(), 2200);
+                    }
                 }
                 const t = setTimeout(sing, 2200 + Math.random() * 3000);
                 loungeTimers.push(t);
@@ -4105,52 +4176,148 @@
             loungeTimers.push(t);
         }
 
+        // ── Day / Night ──────────────────────────────────────────────────────
+
+        function isNighttime() {
+            const h = new Date().getHours();
+            return h >= 18 || h < 6;
+        }
+
+        function updateSkyBody() {
+            const el = document.getElementById('loungeSkyBody');
+            if (el) el.textContent = isNighttime() ? '🌕' : '☀️';
+        }
+
+        function startSkyUpdateLoop() {
+            function tick() {
+                if (!loungeActive) return;
+                updateSkyBody();
+                const t = setTimeout(tick, 60 * 1000);
+                loungeTimers.push(t);
+            }
+            const t = setTimeout(tick, 60 * 1000);
+            loungeTimers.push(t);
+        }
+
+        // ── Rain ─────────────────────────────────────────────────────────────
+
+        function triggerRain() {
+            if (loungeRaining) return;
+            loungeRaining = true;
+            const isHeavy  = Math.random() > 0.45;
+            const duration = 8000 + Math.random() * 22000;   // 8–30 s
+            const endTime  = Date.now() + duration;
+            const rate     = isHeavy ? 85 : 230;             // ms between drops
+            const W        = window.innerWidth;
+            const scene    = document.getElementById('loungeScene');
+
+            function spawnDrop() {
+                if (!loungeActive || Date.now() >= endTime) { loungeRaining = false; return; }
+                const drop = document.createElement('div');
+                drop.className = 'lounge-rain-drop';
+                drop.textContent = '💧';
+                drop.style.left = (Math.random() * (W + 60) - 20) + 'px';
+                const fallDur = isHeavy ? 0.42 + Math.random() * 0.26 : 0.82 + Math.random() * 0.52;
+                drop.style.setProperty('--fall-dur', fallDur + 's');
+                scene.appendChild(drop);
+                setTimeout(() => drop.remove(), fallDur * 1000 + 200);
+                const t = setTimeout(spawnDrop, rate + Math.random() * rate * 0.6);
+                loungeTimers.push(t);
+            }
+            spawnDrop();
+        }
+
+        function startRainCycle() {
+            function schedule() {
+                const t = setTimeout(() => {
+                    if (!loungeActive) return;
+                    triggerRain();
+                    schedule();
+                }, 6 * 60 * 1000);
+                loungeTimers.push(t);
+            }
+            schedule();
+        }
+
+        // ── Shooting star ─────────────────────────────────────────────────────
+
+        function triggerShootingStar() {
+            if (!isNighttime() || !loungeActive) return;
+            const star = document.createElement('div');
+            star.className = 'lounge-shooting-star';
+            star.textContent = '⭐';
+            const startX = window.innerWidth * 0.3 + Math.random() * window.innerWidth * 0.5;
+            const startY = 14 + Math.random() * window.innerHeight * 0.22;
+            const dx     = -(260 + Math.random() * 280);
+            const dy     = 35 + Math.random() * 70;
+            const dur    = 600 + Math.random() * 380;
+            star.style.left       = startX + 'px';
+            star.style.top        = startY + 'px';
+            star.style.opacity    = '0.95';
+            star.style.transition = `left ${dur}ms ease-out, top ${dur}ms ease-out, opacity ${dur}ms ease-out, font-size ${dur}ms ease-out`;
+            document.getElementById('frogLounge').appendChild(star);
+            void star.offsetWidth;
+            star.style.left     = (startX + dx) + 'px';
+            star.style.top      = (startY + dy) + 'px';
+            star.style.opacity  = '0';
+            star.style.fontSize = '0.25rem';
+            setTimeout(() => star.remove(), dur + 100);
+        }
+
+        function startShootingStarCycle() {
+            function cycle() {
+                if (!loungeActive) return;
+                if (isNighttime()) triggerShootingStar();
+                const t = setTimeout(cycle, 5 * 60 * 1000);
+                loungeTimers.push(t);
+            }
+            // first one 45 s after opening
+            const t = setTimeout(cycle, 45000);
+            loungeTimers.push(t);
+        }
+
         function startDoveFlyby() {
             const t = setTimeout(function doFly() {
                 if (!loungeActive) return;
-                // Always flies right → left
-                const startY   = 60 + Math.random() * (window.innerHeight * 0.35);
-                const dove     = document.createElement('div');
-                dove.className = 'lounge-dove';
-                dove.textContent = '🕊️';
-                dove.style.top  = startY + 'px';
-                dove.style.left = (window.innerWidth + 20) + 'px';
-                const dirScale  = 1;
-                document.getElementById('frogLounge').appendChild(dove);
 
-                const startX = window.innerWidth + 20;
-                const endX   = -70;
-                const dur    = 9000 + Math.random() * 3000;
-                const t0     = Date.now();
+                if (!isNighttime()) {
+                    // Always flies right → left
+                    const startY   = 60 + Math.random() * (window.innerHeight * 0.35);
+                    const dove     = document.createElement('div');
+                    dove.className = 'lounge-dove';
+                    dove.textContent = '🕊️';
+                    dove.style.top  = startY + 'px';
+                    dove.style.left = (window.innerWidth + 20) + 'px';
+                    const dirScale  = 1;
+                    document.getElementById('frogLounge').appendChild(dove);
 
-                (function animateDove() {
-                    if (!loungeActive) { dove.remove(); return; }
-                    const p = (Date.now() - t0) / dur;
-                    if (p >= 1) { dove.remove(); return; }
+                    const startX = window.innerWidth + 20;
+                    const endX   = -70;
+                    const dur    = 9000 + Math.random() * 3000;
+                    const t0     = Date.now();
 
-                    // Undulating flight path — 4 rise-and-glide cycles
-                    const wave     = Math.sin(p * Math.PI * 8);
-                    const waveDeriv = Math.cos(p * Math.PI * 8); // >0 = descending, <0 = ascending
-                    const x = startX + (endX - startX) * p;
-                    const y = startY + wave * 18;
-                    dove.style.left = x + 'px';
-                    dove.style.top  = y + 'px';
+                    (function animateDove() {
+                        if (!loungeActive) { dove.remove(); return; }
+                        const p = (Date.now() - t0) / dur;
+                        if (p >= 1) { dove.remove(); return; }
 
-                    // Wing flap synced with path:
-                    // ascending (waveDeriv < 0) → active flap (scaleY low, cycling fast)
-                    // descending/gliding (waveDeriv > 0) → wings spread (scaleY near 1)
-                    const isAscending = waveDeriv < 0;
-                    const flap = isAscending
-                        ? 0.38 + Math.abs(Math.sin(Date.now() / 130)) * 0.52
-                        : 0.82 + Math.sin(Date.now() / 320) * 0.18;
+                        const wave      = Math.sin(p * Math.PI * 8);
+                        const waveDeriv = Math.cos(p * Math.PI * 8);
+                        const x = startX + (endX - startX) * p;
+                        const y = startY + wave * 18;
+                        dove.style.left = x + 'px';
+                        dove.style.top  = y + 'px';
 
-                    // Nose tilts up on ascent, down on glide
-                    const tilt = Math.max(-14, Math.min(14, -waveDeriv * 13));
+                        const isAscending = waveDeriv < 0;
+                        const flap = isAscending
+                            ? 0.38 + Math.abs(Math.sin(Date.now() / 130)) * 0.52
+                            : 0.82 + Math.sin(Date.now() / 320) * 0.18;
+                        const tilt = Math.max(-14, Math.min(14, -waveDeriv * 13));
+                        dove.style.transform = `scaleX(${dirScale}) scaleY(${flap.toFixed(3)}) rotate(${(tilt * dirScale).toFixed(1)}deg)`;
 
-                    dove.style.transform = `scaleX(${dirScale}) scaleY(${flap.toFixed(3)}) rotate(${(tilt * dirScale).toFixed(1)}deg)`;
-
-                    requestAnimationFrame(animateDove);
-                })();
+                        requestAnimationFrame(animateDove);
+                    })();
+                }
 
                 const next = setTimeout(doFly, 5 * 60 * 1000);
                 loungeTimers.push(next);
