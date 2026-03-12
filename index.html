@@ -4281,16 +4281,15 @@
                 const ctx = getAudioCtx(), now = ctx.currentTime;
                 const v = Math.floor(Math.random() * 3);
                 if (v === 0) {
-                    // Deep croak: layered low-freq noise
-                    _noiseBurst(155, 6, now,        0.22, 0.45, ctx);
-                    _noiseBurst(105, 4, now + 0.04, 0.16, 0.30, ctx);
+                    // Deep croak
+                    _tone([130, 72], 'sawtooth', now, 0.22, 0.28, ctx);
                 } else if (v === 1) {
-                    // Ribbit: two mid-freq bursts
-                    _noiseBurst(270, 9, now,        0.11, 0.38, ctx);
-                    _noiseBurst(210, 9, now + 0.14, 0.09, 0.32, ctx);
+                    // Ribbit: two quick chirps
+                    _tone([265, 175], 'square', now,        0.1, 0.18, ctx);
+                    _tone([265, 175], 'square', now + 0.13, 0.1, 0.18, ctx);
                 } else {
-                    // Brrrrp: three rapid low pulses
-                    for (let i = 0; i < 3; i++) _noiseBurst(130, 5, now + i * 0.08, 0.07, 0.35, ctx);
+                    // Brrrrp: three rapid pulses
+                    for (let i = 0; i < 3; i++) _tone([110, 82], 'sawtooth', now + i * 0.075, 0.08, 0.2, ctx);
                 }
             } catch(e) {}
         }
