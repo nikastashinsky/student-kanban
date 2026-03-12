@@ -4245,7 +4245,13 @@
                 }, 6 * 60 * 1000);
                 loungeTimers.push(t);
             }
-            schedule();
+            // first rain ~30s after opening so it's visible, then every 6 min
+            const first = setTimeout(() => {
+                if (!loungeActive) return;
+                triggerRain();
+                schedule();
+            }, 30 * 1000);
+            loungeTimers.push(first);
         }
 
         // ── Shooting star ─────────────────────────────────────────────────────
