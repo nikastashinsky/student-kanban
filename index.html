@@ -3480,12 +3480,14 @@
         }
 
         function exportDailyCSV() {
-            const rows = [['Date', 'Mood', 'Frog', 'Grateful 1', 'Grateful 2', 'Grateful 3', 'Tasks Done', 'Tasks Pending']];
+            const rows = [['Date', 'Mood', 'Mood Score (1-10)', 'Frog', 'Grateful 1', 'Grateful 2', 'Grateful 3', 'Tasks Done', 'Tasks Pending']];
             [daily.today, ...daily.history].forEach(day => {
                 if (!day?.key) return;
                 const done    = (day.tasks || []).filter(t =>  t.done).map(t => t.text).join(' | ');
                 const pending = (day.tasks || []).filter(t => !t.done).map(t => t.text).join(' | ');
-                rows.push([day.key, day.mood || '', day.frog || '',
+                const rawScore = day.mood ? (MOOD_SCORES[day.mood] ?? null) : null;
+                const moodScore = rawScore !== null ? (((rawScore - (-1.5)) / (2 - (-1.5))) * 9 + 1).toFixed(2) : '';
+                rows.push([day.key, day.mood || '', moodScore, day.frog || '',
                     day.gratefuls?.[0] || '', day.gratefuls?.[1] || '', day.gratefuls?.[2] || '',
                     done, pending]);
             });
