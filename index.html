@@ -3161,7 +3161,8 @@
         let daily = { today: null, history: [] };
 
         function getTodayKey() {
-            return new Date().toISOString().split('T')[0];
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         }
 
         function getTodayDisplay() {
@@ -3762,7 +3763,7 @@
             for (let i = 6; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(d.getDate() - i);
-                days.push({ key: d.toISOString().slice(0,10), dow: d.getDay() });
+                days.push({ key: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`, dow: d.getDay() });
             }
             const scores = days.map(({ key }) => getDayScore(getDayData(key)));
             document.getElementById('feelTrendDays').innerHTML = days.map(({ key, dow }, idx) => {
