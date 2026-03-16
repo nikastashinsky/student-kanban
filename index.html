@@ -1828,8 +1828,8 @@
         }
         #frogLounge.open { display: block; }
         #frogLounge.night {
-            background-color: #747870;
-            background-image: radial-gradient(circle, #3d5535 1.2px, transparent 1.2px);
+            background-color: #1e1c1a;
+            background-image: radial-gradient(circle, rgba(200,180,150,0.10) 1.2px, transparent 1.2px);
         }
 
         #loungeCanvas {
@@ -1878,6 +1878,13 @@
             38%  { transform: scale(1.35) translateY(-14px); }
             65%  { transform: scale(0.88) translateY(3px);  }
             100% { transform: scale(1)    translateY(0);    }
+        }
+        .lounge-emoji.cricket-hop { animation: cricket-hop 0.22s ease-out; }
+        @keyframes cricket-hop {
+            0%   { transform: scaleX(1)   translateY(0);    }
+            30%  { transform: scaleX(0.8) translateY(-5px); }
+            60%  { transform: scaleX(1.1) translateY(1px);  }
+            100% { transform: scaleX(1)   translateY(0);    }
         }
 
         .lounge-bubble {
@@ -4011,6 +4018,8 @@
             startParrotSinging();
             const parrotEl = document.querySelector('#loungeScene .lounge-emoji[data-type="parrot"]');
             if (parrotEl) startParrotIdleHop(parrotEl);
+            const cricketEl = document.querySelector('#loungeScene .lounge-emoji[data-type="cricket"]');
+            if (cricketEl) startCricketHop(cricketEl);
             loungeRaining = false;
             startRainCycle();
             startShootingStarCycle();
@@ -4342,6 +4351,32 @@
             } catch(e) {}
         }
 
+        function startCricketHop(el) {
+            function hop() {
+                if (!loungeActive) return;
+                if (!document.getElementById('loungeScene')?.contains(el)) return;
+                el.classList.remove('cricket-hop');
+                void el.offsetWidth;
+                el.classList.add('cricket-hop');
+                setTimeout(() => el.classList.remove('cricket-hop'), 220);
+                // occasionally do a quick double-hop
+                if (Math.random() < 0.35) {
+                    const t2 = setTimeout(() => {
+                        if (!loungeActive) return;
+                        el.classList.remove('cricket-hop');
+                        void el.offsetWidth;
+                        el.classList.add('cricket-hop');
+                        setTimeout(() => el.classList.remove('cricket-hop'), 220);
+                    }, 280);
+                    loungeTimers.push(t2);
+                }
+                const next = setTimeout(hop, 2500 + Math.random() * 6000);
+                loungeTimers.push(next);
+            }
+            const first = setTimeout(hop, 800 + Math.random() * 3000);
+            loungeTimers.push(first);
+        }
+
         function cricketChirp(el) {
             playCricketSound();
             el.classList.remove('hopping');
@@ -4414,6 +4449,7 @@
                 el.style.left = Math.round(d.xp * W) + 'px';
                 el.style.top  = Math.round(d.yp * H) + 'px';
                 scene.appendChild(el);
+                if (d.type === 'cricket') startCricketHop(el);
             });
         }
 
