@@ -3906,7 +3906,8 @@
         let loungeActive    = false;
         let loungeDrawing   = false;
         let loungeRaining   = false;
-        let loungeIsNight   = false;
+        let loungeIsNight        = false;
+        let _loungePreNightTheme = null;
         let loungeCfgOpen   = false;
         let loungeTimers    = [];
         let _audioCtx       = null;
@@ -3943,6 +3944,10 @@
             } else {
                 loungeTimers.forEach(clearTimeout);
                 loungeTimers = [];
+                if (_loungePreNightTheme !== null) {
+                    setTheme(_loungePreNightTheme);
+                    _loungePreNightTheme = null;
+                }
             }
         }
 
@@ -3980,6 +3985,10 @@
             const W = window.innerWidth, H = window.innerHeight;
             const placed = {};
             loungeIsNight = isNighttime();
+            if (loungeIsNight && currentTheme !== 'dark') {
+                _loungePreNightTheme = currentTheme;
+                setTheme('dark');
+            }
             LOUNGE_DEFAULTS.forEach(d => {
                 if (d.nightOnly && !loungeIsNight) return;
                 const el = createLoungeEmoji(d);
@@ -4377,8 +4386,19 @@
             if (el) el.textContent = night ? '🌕' : '☀️';
             document.getElementById('frogLounge')?.classList.toggle('night', night);
             if (night !== loungeIsNight) {
-                if (night) addNightCreatures();
-                else removeNightCreatures();
+                if (night) {
+                    addNightCreatures();
+                    if (currentTheme !== 'dark') {
+                        _loungePreNightTheme = currentTheme;
+                        setTheme('dark');
+                    }
+                } else {
+                    removeNightCreatures();
+                    if (_loungePreNightTheme !== null) {
+                        setTheme(_loungePreNightTheme);
+                        _loungePreNightTheme = null;
+                    }
+                }
                 loungeIsNight = night;
             }
         }
