@@ -4410,6 +4410,13 @@
 
         // ── Day / Night ──────────────────────────────────────────────────────
 
+        function getMoonPhaseEmoji() {
+            const KNOWN_NEW_MOON = new Date('2000-01-06T18:14:00Z').getTime();
+            const LUNAR_MS = 29.530588853 * 24 * 60 * 60 * 1000;
+            const fraction = ((Date.now() - KNOWN_NEW_MOON) % LUNAR_MS) / LUNAR_MS;
+            return ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'][Math.floor(fraction * 8)];
+        }
+
         function isNighttime() {
             const h = new Date().getHours();
             return h >= 18 || h < 6;
@@ -4418,7 +4425,7 @@
         function updateSkyBody() {
             const night = isNighttime();
             const el = document.getElementById('loungeSkyBody');
-            if (el) el.textContent = night ? '🌕' : '☀️';
+            if (el) el.textContent = night ? getMoonPhaseEmoji() : '☀️';
             document.getElementById('frogLounge')?.classList.toggle('night', night);
             if (night !== loungeIsNight) {
                 if (night) {
