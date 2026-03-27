@@ -1382,6 +1382,32 @@
             border-top: 1.5px dashed #ede9e5;
             margin: 20px 0;
         }
+        .feel-score-row {
+            display: flex;
+            justify-content: center;
+            margin: 4px 0 18px;
+        }
+        .feel-score-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .feel-score-track { stroke: #ede9e5; }
+        .feel-score-num   { fill: #2c2c2c; }
+        .feel-score-denom { fill: #aaa; }
+        .feel-score-lbl {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.68em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #c4bcb4;
+        }
+        body.dark .feel-score-track { stroke: #3a3632; }
+        body.dark .feel-score-num   { fill: #e8e4de; }
+        body.dark .feel-score-denom { fill: #5a5450; }
+        body.dark .feel-score-lbl   { color: #7a7068; }
 
         .feel-cal-nav {
             display: flex;
@@ -2188,6 +2214,9 @@
                 <span class="feel-modal-title">feeling log</span>
                 <button class="feel-close" onclick="closeFeelLog()">×</button>
             </div>
+            <div class="feel-score-row">
+                <div class="feel-score-cell" id="feelScore7d"></div>
+            </div>
             <div class="feel-trend">
                 <div class="feel-section-title">7-day trend</div>
                 <div class="feel-trend-days" id="feelTrendDays"></div>
@@ -2202,6 +2231,10 @@
                 <button class="feel-cal-btn" onclick="shiftCalMonth(1)">›</button>
             </div>
             <div class="feel-cal-grid" id="feelCalGrid"></div>
+            <hr class="feel-divider">
+            <div class="feel-score-row">
+                <div class="feel-score-cell" id="feelScoreMonth"></div>
+            </div>
         </div>
     </div>
 
@@ -3675,7 +3708,66 @@
             renderCalendar();
         }
 
+        function rawToTen(raw) {
+            return Math.max(1, Math.min(10, ((raw + 1.5) / 3.5) * 9 + 1));
+        }
+
+        function scoreArcColor(s) {
+            if (s >= 7.5) return '#50b450';
+            if (s >= 5.5) return '#a0c840';
+            if (s >= 4.0) return '#c8c040';
+            if (s >= 2.5) return '#c87840';
+            return '#c84848';
+        }
+
+        function renderScoreCircle(score10, label) {
+            const R = 36, C = +(2 * Math.PI * R).toFixed(2);
+            const dash  = score10 !== null ? +(C * score10 / 10).toFixed(2) : 0;
+            const color = score10 !== null ? scoreArcColor(score10) : '#ccc';
+            const display = score10 !== null ? score10.toFixed(1) : '—';
+            return `<svg width="90" height="90" viewBox="0 0 90 90">
+                <circle class="feel-score-track" cx="45" cy="45" r="${R}" fill="none" stroke-width="6"/>
+                ${score10 !== null ? `<circle cx="45" cy="45" r="${R}" fill="none" stroke="${color}" stroke-width="6"
+                    stroke-dasharray="${dash} ${C}" stroke-linecap="round"
+                    transform="rotate(-90 45 45)"/>` : ''}
+                <text class="feel-score-num" x="45" y="44" text-anchor="middle" dominant-baseline="central"
+                    font-size="20" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-weight="600">${display}</text>
+                <text class="feel-score-denom" x="45" y="59" text-anchor="middle" dominant-baseline="central"
+                    font-size="10" font-family="Helvetica Neue,Helvetica,Arial,sans-serif">${score10 !== null ? '/ 10' : ''}</text>
+            </svg>
+            <div class="feel-score-lbl">${label}</div>`;
+        }
+
+        function render7dScore() {
+            const raws = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                const raw = getDayScore(getDayData(key));
+                if (raw !== null) raws.push(raw);
+            }
+            const avg = raws.length ? raws.reduce((a, b) => a + b, 0) / raws.length : null;
+            const el = document.getElementById('feelScore7d');
+            if (el) el.innerHTML = renderScoreCircle(avg !== null ? rawToTen(avg) : null, '7-day avg');
+        }
+
+        function renderMonthScore() {
+            const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+            const daysInMonth = new Date(feelCalYear, feelCalMonth + 1, 0).getDate();
+            const raws = [];
+            for (let day = 1; day <= daysInMonth; day++) {
+                const key = `${feelCalYear}-${String(feelCalMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const raw = getDayScore(getDayData(key));
+                if (raw !== null) raws.push(raw);
+            }
+            const avg = raws.length ? raws.reduce((a, b) => a + b, 0) / raws.length : null;
+            const el = document.getElementById('feelScoreMonth');
+            if (el) el.innerHTML = renderScoreCircle(avg !== null ? rawToTen(avg) : null, `${MONTHS[feelCalMonth]} avg`);
+        }
+
         function renderFeelLog() {
+            render7dScore();
             renderTrend();
             renderCalendar();
         }
@@ -3836,6 +3928,7 @@
                 </div>`;
             }
             document.getElementById('feelCalGrid').innerHTML = html;
+            renderMonthScore();
         }
 
         // ── Doodle ────────────────────────────────────────────────────────
