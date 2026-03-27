@@ -2199,8 +2199,10 @@
                     <button class="dp-puzzle-btn" id="dpPuzzleNo" onclick="setPuzzle(false)">no</button>
                 </div>
                 <div id="dpPuzzleInputWrap" style="display:none">
-                    <input class="dp-grateful-input" id="dpPuzzleInput" type="text"
-                           placeholder="what's on your mind?" oninput="savePuzzleText(this.value)">
+                    <div class="dp-grateful-row">
+                        <input class="dp-grateful-input" id="dpPuzzleInput" type="text"
+                               placeholder="what's on your mind?" oninput="savePuzzleText(this.value)">
+                    </div>
                 </div>
             </div>
 
@@ -3589,16 +3591,17 @@
         }
 
         function exportDailyCSV() {
-            const rows = [['Date', 'Mood', 'Mood Score (1-10)', 'Frog', 'Grateful 1', 'Grateful 2', 'Grateful 3', 'Tasks Done', 'Tasks Pending']];
+            const rows = [['Date', 'Mood', 'Mood Score (1-10)', 'Frog', 'Grateful 1', 'Grateful 2', 'Grateful 3', 'Puzzling', 'Tasks Done', 'Tasks Pending']];
             [daily.today, ...daily.history].forEach(day => {
                 if (!day?.key) return;
                 const done    = (day.tasks || []).filter(t =>  t.done).map(t => t.text).join(' | ');
                 const pending = (day.tasks || []).filter(t => !t.done).map(t => t.text).join(' | ');
                 const rawScore = day.mood ? (MOOD_SCORES[day.mood] ?? null) : null;
                 const moodScore = rawScore !== null ? (((rawScore - (-1.5)) / (2 - (-1.5))) * 9 + 1).toFixed(2) : '';
+                const puzzling = day.puzzle === false ? 'no' : (typeof day.puzzle === 'string' && day.puzzle ? day.puzzle : '');
                 rows.push([day.key, day.mood || '', moodScore, day.frog || '',
                     day.gratefuls?.[0] || '', day.gratefuls?.[1] || '', day.gratefuls?.[2] || '',
-                    done, pending]);
+                    puzzling, done, pending]);
             });
             downloadCSV(buildCSV(rows), 'daily-log.csv');
             showToast('daily log exported ✓');
