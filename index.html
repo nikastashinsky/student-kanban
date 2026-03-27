@@ -1177,6 +1177,29 @@
         .dp-grateful-input:focus { border-bottom-color: #c0b8b0; }
         .dp-grateful-input::placeholder { color: #ddd; }
 
+        /* ── Puzzle section ── */
+        .dp-puzzle-yn {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .dp-puzzle-btn {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.78em;
+            padding: 3px 14px;
+            border: 1.5px solid #e0dcd8;
+            border-radius: 20px;
+            background: transparent;
+            color: #b0a89e;
+            cursor: pointer;
+            transition: border-color 0.12s, color 0.12s, background 0.12s;
+        }
+        .dp-puzzle-btn:hover { border-color: #c0b8b0; color: #777; }
+        .dp-puzzle-btn.sel { border-color: #a09088; background: #f0ece8; color: #555; }
+        body.dark .dp-puzzle-btn { border-color: #3a3632; color: #5a5450; }
+        body.dark .dp-puzzle-btn:hover { border-color: #5a5450; color: #a09890; }
+        body.dark .dp-puzzle-btn.sel { border-color: #7a7068; background: #322e2b; color: #e8e4de; }
+
         /* ── Mood dropdown ── */
         .dp-mood-wrap { position: relative; }
 
@@ -2165,6 +2188,19 @@
                     <span class="dp-grateful-num">3</span>
                     <input class="dp-grateful-input" id="dpGrateful2" type="text"
                            placeholder="something good..." oninput="saveGrateful(2,this.value)">
+                </div>
+            </div>
+
+            <!-- Puzzle -->
+            <div class="dp-section">
+                <div class="dp-label">anything puzzling you today?</div>
+                <div class="dp-puzzle-yn">
+                    <button class="dp-puzzle-btn" id="dpPuzzleYes" onclick="setPuzzle(true)">yes</button>
+                    <button class="dp-puzzle-btn" id="dpPuzzleNo" onclick="setPuzzle(false)">no</button>
+                </div>
+                <div id="dpPuzzleInputWrap" style="display:none">
+                    <input class="dp-grateful-input" id="dpPuzzleInput" type="text"
+                           placeholder="what's on your mind?" oninput="savePuzzleText(this.value)">
                 </div>
             </div>
 
@@ -3213,7 +3249,7 @@
         }
 
         function freshDay(key) {
-            return { key: key || getTodayKey(), frog: '', frogDone: false, tasks: [], gratefuls: ['','',''], mood: null };
+            return { key: key || getTodayKey(), frog: '', frogDone: false, tasks: [], gratefuls: ['','',''], mood: null, puzzle: null };
         }
 
         function loadDailyData() {
@@ -3229,7 +3265,7 @@
                 if (daily.today.key !== todayKey) {
                     // archive the previous day if it had any content
                     const prev = daily.today;
-                    const hadContent = prev.tasks.length || prev.frog || prev.gratefuls.some(g => g) || prev.mood;
+                    const hadContent = prev.tasks.length || prev.frog || prev.gratefuls.some(g => g) || prev.mood || prev.puzzle !== null;
                     if (hadContent) {
                         daily.history.unshift(prev);
                         if (daily.history.length > 60) daily.history = daily.history.slice(0, 60);
@@ -3291,6 +3327,9 @@
             for (let i = 0; i < 3; i++) {
                 document.getElementById(`dpGrateful${i}`).value = daily.today.gratefuls[i] || '';
             }
+
+            // puzzle
+            renderPuzzle();
 
             // mood
             renderMoodTrigger();
@@ -3471,6 +3510,33 @@
         function saveGrateful(idx, value) {
             daily.today.gratefuls[idx] = value;
             saveDailyData();
+        }
+
+        function setPuzzle(isYes) {
+            if (isYes) {
+                if (typeof daily.today.puzzle !== 'string') daily.today.puzzle = '';
+            } else {
+                daily.today.puzzle = false;
+            }
+            saveDailyData();
+            renderPuzzle();
+        }
+
+        function savePuzzleText(text) {
+            daily.today.puzzle = text;
+            saveDailyData();
+        }
+
+        function renderPuzzle() {
+            const p = daily.today.puzzle;
+            const isYes = typeof p === 'string';
+            const isNo  = p === false;
+            document.getElementById('dpPuzzleYes')?.classList.toggle('sel', isYes);
+            document.getElementById('dpPuzzleNo')?.classList.toggle('sel', isNo);
+            const wrap  = document.getElementById('dpPuzzleInputWrap');
+            const input = document.getElementById('dpPuzzleInput');
+            if (wrap)  wrap.style.display = isYes ? 'block' : 'none';
+            if (input && isYes) input.value = p;
         }
 
         function selectMood(emoji) {
