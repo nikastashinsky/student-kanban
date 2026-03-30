@@ -1200,6 +1200,61 @@
         body.dark .dp-puzzle-btn:hover { border-color: #5a5450; color: #a09890; }
         body.dark .dp-puzzle-btn.sel { border-color: #7a7068; background: #322e2b; color: #e8e4de; }
 
+        /* ── Exercise celebration ── */
+        #exerciseCelebration {
+            position: fixed; inset: 0; z-index: 9999; pointer-events: none; overflow: hidden;
+        }
+        .expl-emoji {
+            position: absolute;
+            font-size: 2.4rem; line-height: 1;
+            pointer-events: none;
+            will-change: transform, opacity;
+            animation: expl-fly 2s ease-out forwards;
+        }
+        @keyframes expl-fly {
+            0%   { opacity: 1; transform: translate(0,0) scale(0.4); }
+            40%  { opacity: 1; transform: translate(calc(var(--ex)*0.55), calc(var(--ey)*0.55)) scale(1.4); }
+            100% { opacity: 0; transform: translate(var(--ex), var(--ey)) scale(0.9); }
+        }
+
+        /* ── Workout streak badge ── */
+        .feel-score-row { gap: 0; }
+        .workout-streak-badge {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 4px; padding: 0 20px;
+            border-left: 1.5px solid #ede9e5;
+        }
+        .workout-streak-top { display: flex; align-items: baseline; gap: 3px; }
+        .workout-streak-num {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 2.4em; font-weight: 700; color: #2c2c2c; line-height: 1;
+        }
+        .workout-streak-fire { font-size: 1.5em; line-height: 1; transition: filter 0.4s; }
+        .workout-streak-fire.hot {
+            filter: drop-shadow(0 0 5px rgba(255,100,20,0.75)) drop-shadow(0 0 12px rgba(255,55,0,0.45));
+        }
+        .workout-streak-lbl {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.68em; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.5px; color: #c4bcb4;
+        }
+        body.dark .workout-streak-badge { border-color: #3a3632; }
+        body.dark .workout-streak-num   { color: #e8e4de; }
+        body.dark .workout-streak-lbl   { color: #7a7068; }
+
+        /* ── Trend workout toggle ── */
+        .feel-trend-workout-row {
+            display: flex; align-items: center; gap: 8px;
+            margin-top: 10px; padding-top: 10px;
+            border-top: 1px solid #ede9e5;
+        }
+        .feel-trend-workout-lbl {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.75em; color: #aaa; white-space: nowrap;
+        }
+        body.dark .feel-trend-workout-row { border-color: #3a3632; }
+        body.dark .feel-trend-workout-lbl { color: #5a5450; }
+
         /* ── Mood dropdown ── */
         .dp-mood-wrap { position: relative; }
 
@@ -2148,6 +2203,22 @@
         </div>
         <div class="dp-body">
 
+            <!-- Mood -->
+            <div class="dp-section">
+                <div class="dp-label">feeling</div>
+                <div class="dp-mood-wrap" id="dpMoodWrap">
+                    <button class="dp-mood-trigger" id="dpMoodTrigger" onclick="toggleMoodDropdown()">
+                        <span class="dp-mood-trigger-emoji" id="dpMoodTriggerEmoji"></span>
+                        <span class="dp-mood-trigger-label" id="dpMoodTriggerLabel">how are you feeling?</span>
+                        <span class="dp-mood-caret">▾</span>
+                    </button>
+                    <div class="dp-mood-dropdown" id="dpMoodDropdown"></div>
+                </div>
+            </div>
+            <div class="dp-section" style="padding-top:10px; padding-bottom:6px;">
+                <button class="dp-log-btn" onclick="openFeelLog()">feeling log ↗</button>
+            </div>
+
             <!-- 🐸 Eat the frog -->
             <div class="dp-section">
                 <div class="dp-frog-header">
@@ -2206,20 +2277,13 @@
                 </div>
             </div>
 
-            <!-- Mood -->
+            <!-- Exercise -->
             <div class="dp-section">
-                <div class="dp-label">feeling</div>
-                <div class="dp-mood-wrap" id="dpMoodWrap">
-                    <button class="dp-mood-trigger" id="dpMoodTrigger" onclick="toggleMoodDropdown()">
-                        <span class="dp-mood-trigger-emoji" id="dpMoodTriggerEmoji"></span>
-                        <span class="dp-mood-trigger-label" id="dpMoodTriggerLabel">how are you feeling?</span>
-                        <span class="dp-mood-caret">▾</span>
-                    </button>
-                    <div class="dp-mood-dropdown" id="dpMoodDropdown"></div>
+                <div class="dp-label">exercise today?</div>
+                <div class="dp-puzzle-yn">
+                    <button class="dp-puzzle-btn" id="dpExerciseYes" onclick="setExercise(true)">yes</button>
+                    <button class="dp-puzzle-btn" id="dpExerciseNo" onclick="setExercise(false)">no</button>
                 </div>
-            </div>
-            <div class="dp-section" style="border-bottom:none; padding-top:10px; padding-bottom:6px;">
-                <button class="dp-log-btn" onclick="openFeelLog()">feeling log ↗</button>
             </div>
 
         </div>
@@ -2254,6 +2318,7 @@
             </div>
             <div class="feel-score-row">
                 <div class="feel-score-cell" id="feelScore7d"></div>
+                <div class="workout-streak-badge" id="feelWorkoutStreak"></div>
             </div>
             <div class="feel-trend">
                 <div class="feel-section-title">7-day trend</div>
@@ -3251,7 +3316,7 @@
         }
 
         function freshDay(key) {
-            return { key: key || getTodayKey(), frog: '', frogDone: false, tasks: [], gratefuls: ['','',''], mood: null, puzzle: null };
+            return { key: key || getTodayKey(), frog: '', frogDone: false, tasks: [], gratefuls: ['','',''], mood: null, puzzle: null, workout: null };
         }
 
         function loadDailyData() {
@@ -3267,7 +3332,7 @@
                 if (daily.today.key !== todayKey) {
                     // archive the previous day if it had any content
                     const prev = daily.today;
-                    const hadContent = prev.tasks.length || prev.frog || prev.gratefuls.some(g => g) || prev.mood || prev.puzzle !== null;
+                    const hadContent = prev.tasks.length || prev.frog || prev.gratefuls.some(g => g) || prev.mood || prev.puzzle !== null || prev.workout !== null;
                     if (hadContent) {
                         daily.history.unshift(prev);
                         if (daily.history.length > 60) daily.history = daily.history.slice(0, 60);
@@ -3332,6 +3397,9 @@
 
             // puzzle
             renderPuzzle();
+
+            // exercise
+            renderExercise();
 
             // mood
             renderMoodTrigger();
@@ -3539,6 +3607,83 @@
             const input = document.getElementById('dpPuzzleInput');
             if (wrap)  wrap.style.display = isYes ? 'block' : 'none';
             if (input && isYes) input.value = p;
+        }
+
+        function setExercise(isYes) {
+            daily.today.workout = isYes ? true : false;
+            saveDailyData();
+            renderExercise();
+            if (isYes) triggerExerciseCelebration();
+        }
+
+        function renderExercise() {
+            document.getElementById('dpExerciseYes')?.classList.toggle('sel', daily.today.workout === true);
+            document.getElementById('dpExerciseNo')?.classList.toggle('sel',  daily.today.workout === false);
+        }
+
+        function triggerExerciseCelebration() {
+            const existing = document.getElementById('exerciseCelebration');
+            if (existing) existing.remove();
+            const overlay = document.createElement('div');
+            overlay.id = 'exerciseCelebration';
+            const cx = window.innerWidth  / 2;
+            const cy = window.innerHeight / 2;
+            const count = 28;
+            for (let i = 0; i < count; i++) {
+                const angle  = (i / count) * 2 * Math.PI + (Math.random() - 0.5) * 0.5;
+                const dist   = 120 + Math.random() * 200;
+                const delay  = Math.random() * 0.3;
+                const el     = document.createElement('div');
+                el.className = 'expl-emoji';
+                el.textContent = '💪';
+                el.style.cssText = `left:${cx}px; top:${cy}px; animation-delay:${delay.toFixed(2)}s;
+                    --ex:${Math.round(Math.cos(angle) * dist)}px; --ey:${Math.round(Math.sin(angle) * dist)}px;`;
+                overlay.appendChild(el);
+            }
+            document.body.appendChild(overlay);
+            setTimeout(() => overlay.remove(), 2400);
+        }
+
+        function getWorkoutStreak() {
+            let streak = 0;
+            for (let i = 0; ; i++) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                const data = getDayData(key);
+                if (data?.workout === true) { streak++; } else { break; }
+            }
+            return streak;
+        }
+
+        function renderWorkoutStreak() {
+            const el = document.getElementById('feelWorkoutStreak');
+            if (!el) return;
+            const streak = getWorkoutStreak();
+            const hot = streak > 2;
+            el.innerHTML = `<div class="workout-streak-top">
+                <span class="workout-streak-num">${streak}</span>
+                <span class="workout-streak-fire${hot ? ' hot' : ''}">🔥</span>
+            </div>
+            <div class="workout-streak-lbl">streak</div>`;
+        }
+
+        function setHistoryWorkout(key, isYes) {
+            if (key === getTodayKey()) {
+                daily.today.workout = isYes;
+            } else {
+                let entry = daily.history.find(h => h.key === key);
+                if (!entry) {
+                    entry = freshDay(key);
+                    daily.history.push(entry);
+                    daily.history.sort((a, b) => b.key.localeCompare(a.key));
+                    if (daily.history.length > 60) daily.history = daily.history.slice(0, 60);
+                }
+                entry.workout = isYes ? true : false;
+            }
+            saveDailyData();
+            renderFeelLog();
+            if (key === getTodayKey()) renderExercise();
         }
 
         function selectMood(emoji) {
@@ -3837,6 +3982,7 @@
 
         function renderFeelLog() {
             render7dScore();
+            renderWorkoutStreak();
             renderTrend();
             renderCalendar();
         }
@@ -3960,11 +4106,19 @@
                 const editingDay = days.find(d => d.key === editingTrendKey);
                 const editData = getDayData(editingTrendKey);
                 const dayName = editingDay ? DAYS_FULL[editingDay.dow] : editingTrendKey;
+                const w = editData?.workout;
                 editRow.innerHTML = `<div class="feel-trend-edit-label">${dayName}</div>
                     <div class="feel-trend-edit-moods">${MOODS.map(m =>
                         `<button class="feel-trend-edit-opt${editData?.mood === m ? ' sel' : ''}"
                             onclick="setHistoryMood('${editingTrendKey}','${m}')">${m}</button>`
-                    ).join('')}</div>`;
+                    ).join('')}</div>
+                    <div class="feel-trend-workout-row">
+                        <span class="feel-trend-workout-lbl">workout?</span>
+                        <button class="dp-puzzle-btn${w === true  ? ' sel' : ''}"
+                            onclick="setHistoryWorkout('${editingTrendKey}', true)">yes</button>
+                        <button class="dp-puzzle-btn${w === false ? ' sel' : ''}"
+                            onclick="setHistoryWorkout('${editingTrendKey}', false)">no</button>
+                    </div>`;
             } else {
                 editRow.innerHTML = '';
             }
