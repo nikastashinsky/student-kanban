@@ -2282,6 +2282,7 @@
                 <div class="dp-label">exercise today?</div>
                 <div class="dp-puzzle-yn">
                     <button class="dp-puzzle-btn" id="dpExerciseYes" onclick="setExercise(true)">yes</button>
+                    <button class="dp-puzzle-btn" id="dpExercisePlans" onclick="setExercise('plans')">i have plans</button>
                     <button class="dp-puzzle-btn" id="dpExerciseNo" onclick="setExercise(false)">no</button>
                 </div>
             </div>
@@ -3609,16 +3610,18 @@
             if (input && isYes) input.value = p;
         }
 
-        function setExercise(isYes) {
-            daily.today.workout = isYes ? true : false;
+        function setExercise(val) {
+            daily.today.workout = val;
             saveDailyData();
             renderExercise();
-            if (isYes) triggerExerciseCelebration();
+            if (val === true) triggerExerciseCelebration();
         }
 
         function renderExercise() {
-            document.getElementById('dpExerciseYes')?.classList.toggle('sel', daily.today.workout === true);
-            document.getElementById('dpExerciseNo')?.classList.toggle('sel',  daily.today.workout === false);
+            const w = daily.today.workout;
+            document.getElementById('dpExerciseYes')?.classList.toggle('sel',   w === true);
+            document.getElementById('dpExercisePlans')?.classList.toggle('sel', w === 'plans');
+            document.getElementById('dpExerciseNo')?.classList.toggle('sel',    w === false);
         }
 
         function triggerExerciseCelebration() {
