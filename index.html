@@ -14,6 +14,10 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* Hide scrollbars globally while preserving scroll functionality */
+        * { scrollbar-width: none; -ms-overflow-style: none; }
+        *::-webkit-scrollbar { display: none; }
+
         body {
             font-family: 'Caveat', cursive;
             background-color: #f9f7f4;
@@ -927,9 +931,6 @@
 
         .dp-panel.open { transform: translateX(0); }
 
-        .dp-panel::-webkit-scrollbar { width: 3px; }
-        .dp-panel::-webkit-scrollbar-track { background: transparent; }
-        .dp-panel::-webkit-scrollbar-thumb { background: #e8e4e0; border-radius: 2px; }
 
         /* panel header */
         .dp-head {
