@@ -1066,6 +1066,28 @@
             pointer-events: none;
         }
 
+        /* ── Brain dump ── */
+        .dp-brain-dump {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 0.84em;
+            color: #2c2c2c;
+            line-height: 1.55;
+            width: 100%;
+            min-height: 52px;
+            padding: 7px 10px;
+            background: rgba(160, 140, 200, 0.04);
+            border: 1.5px solid rgba(140, 120, 200, 0.18);
+            border-radius: 5px;
+            outline: none;
+            resize: none;
+            overflow: hidden;
+            box-sizing: border-box;
+            transition: border-color 0.12s;
+            display: block;
+        }
+        .dp-brain-dump:focus { border-color: rgba(140, 120, 200, 0.4); }
+        .dp-brain-dump::placeholder { color: #ccc; }
+
         /* ── Task list ── */
         .dp-task {
             display: flex;
@@ -1797,6 +1819,8 @@
         body.dark .dp-label { color: #7a7068; }
         body.dark .dp-frog-hint { color: #5a5450; }
         body.dark .dp-frog-input { background: #322e2b; border-color: #3a3632; color: #e8e4de; }
+        body.dark .dp-brain-dump { background: #2e2b32; border-color: #3a3632; color: #e8e4de; }
+        body.dark .dp-brain-dump::placeholder { color: #4a4642; }
         body.dark .dp-grateful-input { background: #322e2b; border-color: #3a3632; color: #e8e4de; }
         body.dark .dp-grateful-input::placeholder { color: #4a4642; }
         body.dark .dp-task-text { color: #e8e4de; }
@@ -2238,9 +2262,17 @@
                 </div>
             </div>
 
-            <!-- Today's tasks -->
+            <!-- Brain dump -->
             <div class="dp-section">
-                <div class="dp-label">today</div>
+                <div class="dp-label">brain dump</div>
+                <textarea class="dp-brain-dump" id="dpBrainDump"
+                          placeholder="everything on your mind — get it out..."
+                          oninput="autoResizeBrainDump(this); saveBrainDump(this.value)"></textarea>
+            </div>
+
+            <!-- Tasklist -->
+            <div class="dp-section">
+                <div class="dp-label">tasklist</div>
                 <div id="dpTaskList"></div>
                 <button class="dp-add-task" onclick="addDailyTask()">+ add task</button>
             </div>
@@ -3319,7 +3351,7 @@
         }
 
         function freshDay(key) {
-            return { key: key || getTodayKey(), frog: '', frogDone: false, tasks: [], gratefuls: ['','',''], mood: null, puzzle: null, workout: null };
+            return { key: key || getTodayKey(), frog: '', frogDone: false, brainDump: '', tasks: [], gratefuls: ['','',''], mood: null, puzzle: null, workout: null };
         }
 
         function loadDailyData() {
@@ -3389,6 +3421,11 @@
             const frogEl = document.getElementById('dpFrog');
             frogEl.textContent = daily.today.frog || '';
             updateFrogCheckBtn();
+
+            // brain dump
+            const bdEl = document.getElementById('dpBrainDump');
+            bdEl.value = daily.today.brainDump || '';
+            autoResizeBrainDump(bdEl);
 
             // tasks
             renderDailyTasks();
@@ -3508,6 +3545,16 @@
                 e.preventDefault();
                 deleteDailyTask(id);
             }
+        }
+
+        function saveBrainDump(text) {
+            daily.today.brainDump = text;
+            saveDailyData();
+        }
+
+        function autoResizeBrainDump(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
         }
 
         function saveFrog(text) {
