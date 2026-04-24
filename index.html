@@ -375,6 +375,7 @@
         }
 
         .done-btn:hover   { border-color: #80c880; color: #50a050; background: rgba(80,200,80,0.06); }
+        .dup-btn:hover    { border-color: #80b8e0; color: #4090c0; background: rgba(80,160,220,0.06); }
         .delete-btn:hover { border-color: #e89090; color: #c05050; background: rgba(200,80,80,0.06); }
 
         /* card top: priority + title */
@@ -2698,8 +2699,9 @@
 
             el.innerHTML = `
                 <div class="card-actions">
-                    <button class="card-btn done-btn"   title="archive" onclick="archiveCard(${card.id},'${col}')">✓</button>
-                    <button class="card-btn delete-btn" title="delete"  onclick="deleteCard(${card.id},'${col}')">✕</button>
+                    <button class="card-btn done-btn"   title="archive"   onclick="archiveCard(${card.id},'${col}')">✓</button>
+                    <button class="card-btn dup-btn"    title="duplicate" onclick="duplicateCard(${card.id},'${col}')">⧉</button>
+                    <button class="card-btn delete-btn" title="delete"    onclick="deleteCard(${card.id},'${col}')">✕</button>
                 </div>
                 <div class="card-top">
                     <button class="priority-btn${card.priority ? ' active' : ''}"
@@ -2781,6 +2783,19 @@
             saveData();
             renderColumn(col);
             showToast('card added');
+        }
+
+        function duplicateCard(id, col) {
+            const src = cards[col].find(c => c.id === id);
+            if (!src) return;
+            const copy = JSON.parse(JSON.stringify(src));
+            copy.id = Date.now();
+            copy.checklist = copy.checklist.map(item => ({ ...item, id: Date.now() + Math.random() }));
+            const idx = cards[col].indexOf(src);
+            cards[col].splice(idx + 1, 0, copy);
+            saveData();
+            renderColumn(col);
+            showToast('card duplicated');
         }
 
         function updateField(id, col, field, val) {
