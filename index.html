@@ -3405,7 +3405,11 @@
 
         const MOODS = ['🤩','🥰','😊','💪','😌','🌱','🤔','😶','😤','😔','😢','🥱','🤯','🤒','🤮'];
         const MOOD_LABELS = { '🤩':'amazing','🥰':'grateful','😊':'good','💪':'energized','😌':'calm','🌱':'hopeful','🤔':'unsure','😶':'numb','😤':'frustrated','😔':'low','😢':'sad','🥱':'tired','🤯':'overwhelmed','🤒':'lightly ill','🤮':'severely ill' };
-        const MOOD_SCORES = { '🤩':2,'🥰':1.8,'😊':1.5,'💪':1.5,'😌':1,'🌱':0.5,'🤔':0,'😶':-0.3,'😤':-0.5,'😔':-1,'😢':-1.2,'🥱':-0.5,'🤯':-1,'🤒':-0.8,'🤮':-2 };
+        // 15 moods evenly distributed from -2 → +2 in logical low-to-high order:
+        // 🤮 😢 😔 🤯 😤 🤒 🥱 😶 🤔 🌱 😌 💪 😊 🥰 🤩  (step ≈ 0.286)
+        const MOOD_SCORES = { '🤮':-2,'😢':-1.71,'😔':-1.43,'🤯':-1.14,'😤':-0.86,'🤒':-0.57,'🥱':-0.29,'😶':0,'🤔':0.29,'🌱':0.57,'😌':0.86,'💪':1.14,'😊':1.43,'🥰':1.71,'🤩':2 };
+        const MOOD_SCORE_MIN = Math.min(...Object.values(MOOD_SCORES)); // -2
+        const MOOD_SCORE_MAX = Math.max(...Object.values(MOOD_SCORES)); // +2
         const POS_WORDS = ['good','great','amazing','wonderful','happy','love','grateful','blessed','thankful','excited','joy','peaceful','calm','proud','inspired','motivated','content','awesome','fantastic','lucky','energized'];
         const NEG_WORDS = ['bad','terrible','sad','stressed','tired','anxious','worried','afraid','angry','frustrated','exhausted','overwhelmed','depressed','lonely','sick','hard','difficult','fail','missed','lost','empty'];
         let moodDropdownOpen = false;
@@ -3893,7 +3897,7 @@
                 const done    = (day.tasks || []).filter(t =>  t.done).map(t => t.text).join(' | ');
                 const pending = (day.tasks || []).filter(t => !t.done).map(t => t.text).join(' | ');
                 const rawScore = day.mood ? (MOOD_SCORES[day.mood] ?? null) : null;
-                const moodScore = rawScore !== null ? (((rawScore + 2) / 4) * 9 + 1).toFixed(2) : '';
+                const moodScore = rawScore !== null ? rawToTen(rawScore).toFixed(2) : '';
                 const puzzling = day.puzzle === false ? 'no' : (typeof day.puzzle === 'string' && day.puzzle ? day.puzzle : '');
                 rows.push([day.key, day.mood || '', moodScore, day.frog || '',
                     day.gratefuls?.[0] || '', day.gratefuls?.[1] || '', day.gratefuls?.[2] || '',
@@ -4074,7 +4078,8 @@
         }
 
         function rawToTen(raw) {
-            return Math.max(1, Math.min(10, ((raw + 2) / 4) * 9 + 1));
+            const range = MOOD_SCORE_MAX - MOOD_SCORE_MIN;
+            return Math.max(1, Math.min(10, ((raw - MOOD_SCORE_MIN) / range) * 9 + 1));
         }
 
         function scoreArcColor(s) {
