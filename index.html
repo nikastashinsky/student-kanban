@@ -3893,7 +3893,7 @@
                 const done    = (day.tasks || []).filter(t =>  t.done).map(t => t.text).join(' | ');
                 const pending = (day.tasks || []).filter(t => !t.done).map(t => t.text).join(' | ');
                 const rawScore = day.mood ? (MOOD_SCORES[day.mood] ?? null) : null;
-                const moodScore = rawScore !== null ? (((rawScore - (-1.5)) / (2 - (-1.5))) * 9 + 1).toFixed(2) : '';
+                const moodScore = rawScore !== null ? (((rawScore + 2) / 4) * 9 + 1).toFixed(2) : '';
                 const puzzling = day.puzzle === false ? 'no' : (typeof day.puzzle === 'string' && day.puzzle ? day.puzzle : '');
                 rows.push([day.key, day.mood || '', moodScore, day.frog || '',
                     day.gratefuls?.[0] || '', day.gratefuls?.[1] || '', day.gratefuls?.[2] || '',
@@ -4074,7 +4074,7 @@
         }
 
         function rawToTen(raw) {
-            return Math.max(1, Math.min(10, ((raw + 1.5) / 3.5) * 9 + 1));
+            return Math.max(1, Math.min(10, ((raw + 2) / 4) * 9 + 1));
         }
 
         function scoreArcColor(s) {
